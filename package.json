@@ -9,6 +9,7 @@
     "start": "next start -H 0.0.0.0",
     "lint": "biome check",
     "format": "biome format --write",
+    "test": "node scripts/smoke-test.js",
     "ts-check": "tsc --noEmit",
     "install-shadcn-components": "npx shadcn@latest add $(cat .shadcn-components)",
     "migrate:init": " node --env-file .env scripts/migrate.ts init",
