@@ -31,7 +31,7 @@ export default async function RootLayout({
   const session = await getSession();
 
   return (
-    <html lang="en" className="dark">
+    <html lang="ru" className="dark">
       <body
         className={`${olyneroSans.variable} ${olyneroMono.variable} antialiased`}
       >
