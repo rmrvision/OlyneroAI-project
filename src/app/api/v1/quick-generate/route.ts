@@ -8,42 +8,44 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const requestSchema = z.object({
   prompt: z.string().min(3),
+  projectName: z.string().min(1).max(80).optional(),
 });
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ projectId: string }> },
-) {
+export async function POST(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { projectId } = await params;
-  const supabase = await createSupabaseServerClient();
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("id,name,owner_id")
-    .eq("id", projectId)
-    .single();
-
-  if (projectError || !project) {
-    return NextResponse.json({ message: "Project not found" }, { status: 404 });
-  }
-
-  const { prompt } = requestSchema.parse(await request.json());
+  const { prompt, projectName } = requestSchema.parse(await request.json());
   let spec: ProjectSpec;
   try {
-    spec = await generateSpecFromPrompt({
-      prompt,
-      projectName: project.name,
-    });
+    spec = await generateSpecFromPrompt({ prompt, projectName });
   } catch (error) {
     const message =
       error instanceof Error
         ? error.message
         : "Не удалось создать спецификацию";
     return NextResponse.json({ message }, { status: 400 });
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .insert({
+      owner_id: user.id,
+      name: spec.projectName,
+      description: prompt,
+      status: "draft",
+    })
+    .select("id,name,owner_id")
+    .single();
+
+  if (projectError || !project) {
+    return NextResponse.json(
+      { message: "Failed to create project" },
+      { status: 500 },
+    );
   }
 
   const { data: build, error: buildError } = await supabase
@@ -76,7 +78,6 @@ export async function POST(
   };
 
   const { signature, timestamp, body } = signRunnerPayload(payload);
-
   const runnerResponse = await fetch(`${runnerUrl}/runs`, {
     method: "POST",
     headers: {
@@ -97,6 +98,7 @@ export async function POST(
       .from("projects")
       .update({ status: "error" })
       .eq("id", project.id);
+
     return NextResponse.json({ message: errorText }, { status: 500 });
   }
 
@@ -110,6 +112,7 @@ export async function POST(
     .eq("id", project.id);
 
   return NextResponse.json({
+    projectId: project.id,
     buildId: build.id,
     status: "running",
     spec,
