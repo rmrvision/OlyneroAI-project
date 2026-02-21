@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { verifyRunnerSignature } from "@/lib/runner";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const signature = request.headers.get("x-olynero-signature");
@@ -12,7 +12,10 @@ export async function POST(request: Request) {
   const artifact = formData.get("artifact");
 
   if (typeof buildId !== "string" || typeof projectId !== "string") {
-    return NextResponse.json({ message: "Missing build metadata" }, { status: 400 });
+    return NextResponse.json(
+      { message: "Missing build metadata" },
+      { status: 400 },
+    );
   }
 
   const payload = { buildId, projectId };
@@ -21,7 +24,10 @@ export async function POST(request: Request) {
   }
 
   if (!(artifact instanceof File)) {
-    return NextResponse.json({ message: "Missing artifact file" }, { status: 400 });
+    return NextResponse.json(
+      { message: "Missing artifact file" },
+      { status: 400 },
+    );
   }
 
   const supabase = createSupabaseAdminClient();

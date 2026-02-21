@@ -108,7 +108,7 @@ export function CreateTaskDialog({
                     />
                     {field.state.meta.errors.length > 0 && (
                       <FieldError>
-                        {field.state.meta.errors[0]!.message}
+                        {field.state.meta.errors[0]?.message}
                       </FieldError>
                     )}
                   </Field>
@@ -131,7 +131,7 @@ export function CreateTaskDialog({
                     />
                     {field.state.meta.errors.length > 0 && (
                       <FieldError>
-                        {field.state.meta.errors[0]!.message}
+                        {field.state.meta.errors[0]?.message}
                       </FieldError>
                     )}
                   </Field>
@@ -152,7 +152,7 @@ export function CreateTaskDialog({
                     />
                     {field.state.meta.errors.length > 0 && (
                       <FieldError>
-                        {field.state.meta.errors[0]!.message}
+                        {field.state.meta.errors[0]?.message}
                       </FieldError>
                     )}
                   </Field>

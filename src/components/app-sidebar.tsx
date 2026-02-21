@@ -36,9 +36,7 @@ export function AppSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="items-start">
         <Link href="/" aria-label="Home">
-          <div className="text-lg font-semibold tracking-tight">
-            OlyneroAI
-          </div>
+          <div className="text-lg font-semibold tracking-tight">OlyneroAI</div>
         </Link>
       </SidebarHeader>
       <SidebarContent>

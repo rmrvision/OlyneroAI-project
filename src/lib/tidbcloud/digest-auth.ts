@@ -88,7 +88,7 @@ export function wrapFetchWithDigestFlow(nativeFetch: typeof fetch) {
     init: RequestInit & { digest: DigestConfig },
   ) {
     let response = await nativeFetch(input, init);
-    let traceIds: string[] = [];
+    const traceIds: string[] = [];
 
     const digestRequest = parseDigestRequest(response);
 

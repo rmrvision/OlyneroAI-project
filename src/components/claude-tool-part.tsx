@@ -298,7 +298,9 @@ function ReadPart({ part }: { part: ClaudeBuiltinToolPart<"Read"> }) {
 
     // biome-ignore lint/suspicious/noAssignInExpressions: no why
     while ((matched = regexp.exec(part.output)) !== null) {
-      lines.push(matched[1]!);
+      if (matched[1]) {
+        lines.push(matched[1]);
+      }
     }
 
     return lines.length;

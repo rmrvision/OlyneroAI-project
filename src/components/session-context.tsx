@@ -48,16 +48,23 @@ export function SessionProvider({
       .select("role,is_disabled")
       .eq("id", currentSession.user.id)
       .single()
-      .then((response: { data: { role?: string; is_disabled?: boolean } | null }) => {
-        const data = response.data as { role?: string; is_disabled?: boolean } | null;
-        if (!active) return;
-        if (data?.is_disabled) {
-          supabase.auth.signOut();
-          setProfileRole(null);
-          return;
-        }
-        setProfileRole(data?.role ?? null);
-      })
+      .then(
+        (response: {
+          data: { role?: string; is_disabled?: boolean } | null;
+        }) => {
+          const data = response.data as {
+            role?: string;
+            is_disabled?: boolean;
+          } | null;
+          if (!active) return;
+          if (data?.is_disabled) {
+            supabase.auth.signOut();
+            setProfileRole(null);
+            return;
+          }
+          setProfileRole(data?.role ?? null);
+        },
+      )
       .catch(() => {
         if (!active) return;
         setProfileRole(null);

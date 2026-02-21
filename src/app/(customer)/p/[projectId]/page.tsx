@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { ProjectChat } from "@/components/project-chat";
 import { BuildHistory } from "@/components/build-history";
+import { ProjectChat } from "@/components/project-chat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ProjectSpec } from "@/lib/spec";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function ProjectChatPage({
   params,
@@ -65,7 +65,9 @@ export default async function ProjectChatPage({
                 {JSON.stringify(latestSpec, null, 2)}
               </pre>
             ) : (
-              <p>Generate a spec from chat to see structured requirements here.</p>
+              <p>
+                Generate a spec from chat to see structured requirements here.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -76,7 +78,7 @@ export default async function ProjectChatPage({
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             <div className="space-y-2">
-              {builds && builds[0]?.preview_url ? (
+              {builds?.[0]?.preview_url ? (
                 <a
                   className="underline"
                   href={builds[0].preview_url}
@@ -86,9 +88,11 @@ export default async function ProjectChatPage({
                   Open preview
                 </a>
               ) : (
-                <p>Preview URLs will appear after the first successful build.</p>
+                <p>
+                  Preview URLs will appear after the first successful build.
+                </p>
               )}
-              {builds && builds[0]?.artifact_path ? (
+              {builds?.[0]?.artifact_path ? (
                 <a
                   className="underline"
                   href={`/api/v1/builds/${builds[0].id}/artifact`}

@@ -1,5 +1,12 @@
 import { spawn } from "node:child_process";
-import { cp, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  readdir,
+  readFile,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { getProjectSlug, type ProjectSpec } from "@/lib/spec";
 
@@ -70,7 +77,7 @@ function buildReplacements(spec: ProjectSpec) {
 }
 
 function escapeForTemplate(value: string) {
-  return value.replace(/"/g, "\\\"");
+  return value.replace(/"/g, '\\"');
 }
 
 async function replaceTemplateTokens(

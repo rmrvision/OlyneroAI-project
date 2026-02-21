@@ -1,5 +1,10 @@
 "use client";
 
+import type { AuthUser } from "@vercel/sdk/models/authuser";
+import type { AuthUserLimited } from "@vercel/sdk/models/authuserlimited";
+import { CheckIcon } from "lucide-react";
+import Form from "next/form";
+import { useState } from "react";
 import { setVercelToken, validateVercelToken } from "@/actions/user-settings";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +20,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import type { AuthUser } from "@vercel/sdk/models/authuser";
-import type { AuthUserLimited } from "@vercel/sdk/models/authuserlimited";
-import { CheckIcon } from "lucide-react";
-import Form from "next/form";
-import { useState } from "react";
 
 export function VercelTokenSetup({
   tokenErased,

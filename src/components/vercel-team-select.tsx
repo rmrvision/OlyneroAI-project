@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import type { Team } from "@vercel/sdk/models/team";
+import type { TeamLimited } from "@vercel/sdk/models/teamlimited";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
@@ -6,9 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
-import type { Team } from "@vercel/sdk/models/team";
-import type { TeamLimited } from "@vercel/sdk/models/teamlimited";
 
 export function VercelTeamSelect({
   id,

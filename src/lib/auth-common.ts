@@ -14,14 +14,13 @@ export function toSessionUser(user: User, role?: Role): SessionUser {
   const name =
     typeof metadata.name === "string" && metadata.name.trim() !== ""
       ? metadata.name
-      : user.email ?? "User";
+      : (user.email ?? "User");
 
   return {
     id: user.id,
     email: user.email ?? "",
     name,
-    image:
-      typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
+    image: typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
     role: role ?? parseRole(String(metadata.role ?? "user")),
   };
 }

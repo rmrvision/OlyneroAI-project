@@ -1,5 +1,8 @@
 "use client";
 
+import { CheckIcon } from "lucide-react";
+import Form from "next/form";
+import { useState } from "react";
 import {
   type GithubUserResponse,
   setGithubToken,
@@ -19,9 +22,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { CheckIcon } from "lucide-react";
-import Form from "next/form";
-import { useState } from "react";
 
 export function GithubAccountSettings({
   tokenExists,

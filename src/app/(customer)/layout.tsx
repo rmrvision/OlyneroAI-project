@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { getSessionUser } from "@/lib/auth";
-import type { ProjectSummary } from "@/lib/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { ProjectSummary } from "@/lib/types";
 
 export default async function MainLayout({
   children,

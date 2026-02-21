@@ -25,7 +25,10 @@ export async function GET(
   }
 
   if (!build.artifact_path) {
-    return NextResponse.json({ message: "Artifact not ready" }, { status: 404 });
+    return NextResponse.json(
+      { message: "Artifact not ready" },
+      { status: 404 },
+    );
   }
 
   const admin = createSupabaseAdminClient();

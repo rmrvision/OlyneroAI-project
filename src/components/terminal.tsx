@@ -1,8 +1,9 @@
 "use client";
+import { type MotionProps, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { AutoCollapse } from "@/components/auto-collapse";
 import { cn } from "@/lib/utils";
-import { motion, MotionProps } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+
 interface AnimatedSpanProps extends MotionProps {
   children: React.ReactNode;
   delay?: number;

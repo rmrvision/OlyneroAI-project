@@ -22,6 +22,23 @@ where email = 'admin@example.com'
 on conflict (id) do update set role = 'admin';
 ```
 
+## Environment Variables
+Web app (public):
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: browser anon key for client auth.
+
+Web app (server-only):
+- `SUPABASE_SERVICE_ROLE_KEY`: service role key for admin/server-only operations.
+- `RUNNER_SECRET`: shared secret used to sign runner requests and callbacks.
+- `APP_ADMIN_EMAIL` (optional): reserved for future bootstrap flows.
+- `APP_ADMIN_PASSWORD` (optional): reserved for future bootstrap flows.
+
+Runner service:
+- `RUNNER_SECRET`: must match the web app value.
+- `RUNNER_PUBLIC_URL`: base URL used to build preview links.
+- `RUNNER_NODE_IMAGE`: docker image for build containers (default: `node:20-slim`).
+- `PORT`: runner port (default: `4010`).
+
 ## Runner (Docker Sandbox)
 OlyneroAI uses a separate runner service to build generated apps safely.
 
@@ -66,118 +83,28 @@ values ('runner_url', '\"http://your-runner-host:4010\"'::jsonb)
 on conflict (key) do update set value = excluded.value;
 ```
 
-## What This Agent Can Do
-- Generate complete web apps from a prompt (Next.js 16 + shadcn/Tailwind).
-- Provision TiDB Cloud clusters/branches per project and per instruction.
-- Track versions so code, schema, and credentials stay aligned.
-- Run and preview apps instantly via Vercel sandboxes and previews.
-- Keep conversational context between generations for iterative refinement.
-- Scale down idle environments with TiDB Cloud serverless.
+## Deployment
 
-## Architecture Overview
+### A) Vercel
+1. Create a new Vercel project from this repo.
+2. Add environment variables:
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RUNNER_SECRET`, `APP_ADMIN_EMAIL` (optional), `APP_ADMIN_PASSWORD` (optional).
+3. Build command: `npm run build`
+4. Output: default Next.js output (no custom output directory).
+5. Deploy the runner separately (VPS) and set `settings.runner_url` in Supabase.
 
-<p align="center">
-  <img alt="Architecture Overview: OlyneroAI" src="./public/architecture.png" width="960" />
-</p>
+### B) Timeweb App
+1. Create a new Node.js app from this repo.
+2. Add environment variables (same list as Vercel).
+3. Build command: `npm run build`
+4. Start command: `npm run start`
+5. Deploy the runner separately (VPS) and set `settings.runner_url` in Supabase.
 
-- **Server actions** (`src/actions/*`) orchestrate GitHub, TiDB Cloud, and Vercel resources.
-- **Sandboxes** (`src/sandboxes/*`) launch per-task runtimes, run `npm run dev`, and report via `src/app/hooks/v1/sandboxes/[sandboxId]/route.ts`.
-- **Session UI** (`src/app/(customer)/s/[slug]`) streams logs, checkpoints, and deploy links.
-- **Auth & protection** (`src/proxy.ts`, `src/lib/auth*`) gate `/projects`, `/settings`, and API v1 routes.
-
-## How It Works (End-to-End)
-<p align="center">
-  <img alt="End-to-end user flow: prompt to plan, provision, generate, migrate, deploy, and iterate" src="./public/userflow.png" width="960" />
-</p>
-
-1. **Prompt** – “Build a todo app.”  
-2. **Plan** – Model drafts an execution plan.  
-3. **Provision** – Create TiDB cluster/branch, Vercel sandbox, GitHub repo/branch, and env vars.  
-4. **Generate** – Codex/Claude Code writes app code, Kysely schema, and migrations.  
-5. **Migrate** – Run typed migrations against the TiDB branch.  
-6. **Deploy** – Commit to GitHub and trigger a Vercel preview.  
-7. **Iterate** – Follow-up prompts (e.g., “Add a username field”) spawn new TiDB branches and code revisions, keeping everything reversible.
-
-## Magic Features
-- **Checkpointed versions** – Git branches map to TiDB branches for perfect code–data sync.
-  ```ts
-  // TiDB Cloud branch creation (simplified)
-  import fetch from "node-fetch";
-
-  async function createBranch(clusterId, displayName, publicKey, privateKey) {
-    const res = await fetch(
-      `https://serverless.tidbapi.com/v1beta1/clusters/${clusterId}/branches`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            "Basic " + Buffer.from(`${publicKey}:${privateKey}`).toString("base64"),
-        },
-        body: JSON.stringify({ displayName }),
-      },
-    );
-    if (!res.ok) throw new Error(await res.text());
-    return (await res.json()).branchId;
-  }
-  ```
-- **Type-safe migrations** – Kysely migrations keep schema evolution safe and reversible.
-  ```ts
-  import type { Kysely } from "kysely";
-
-  export async function up(db: Kysely<any>) {
-    await db.schema
-      .alterTable("todo_list")
-      .addColumn("username", "varchar(255)", (col) => col.notNull().defaultTo(""))
-      .execute();
-  }
-
-  export async function down(db: Kysely<any>) {
-    await db.schema.alterTable("todo_list").dropColumn("username").execute();
-  }
-  ```
-- **Scale-to-zero** – TiDB Cloud automatically scales down to $0 when idle, enabling ephemeral AI-generated apps, on-demand dev envs, branch-per-instruction workflows, and bursty agent workloads without persistent costs.
-
-## Directory Layout
-| Path | Purpose |
-| --- | --- |
-| `src/app/(auth)` | Credential login flow rendered via `LoginForm`. |
-| `src/app/(main)` | Internal dashboard (project list, per-project GitHub/Vercel cards, task tables, dialogs). |
-| `src/app/(customer)/s/[slug]` | Session replay UI backed by `getSessionData`. |
-| `src/app/api` | Versioned REST hooks for projects, tasks, revisions, sandboxes, TiDB Cloud branches, Vercel resources, and debug message streams. |
-| `src/actions` | Server actions encapsulating provisioning logic for projects, tasks, revisions, Vercel sandboxes, and TiDB Cloud branches. |
-| `src/lib` | Auth, DB, TiDB Cloud client, user setting validators, AI model helpers, utility types, and `generateSessionId`. |
-| `src/sandboxes` | Helpers that orchestrate `@vercel/sandbox` lifecycle (install tools, resume sessions from Blob storage, enforce trusted runtimes). |
-| `migrations` | Kysely migrations plus schema evolution for `user`, `project`, `task`, `task_revision`, `tidbcloud_branch`, `vercel_sandbox`, and `ui_session`. |
-| `scripts` | Local DX helpers (`migrate.ts`, `setup-local-user.js`, `gen-password.js`). |
-
-## Prerequisites & Environment
-- Node.js 18.18+ (Next.js 16 requirement) and npm.
-- TiDB Serverless account with API keys, organization/project IDs, region, and database endpoint.
-- GitHub account with access to install the required template and push commits via Personal Access Token.
-- Vercel team token with Blob Storage enabled.
-- OpenAI (or CRS) API key to drive Codex sessions.
-- Required environment variables:
-  - `DATABASE_URL`
-  - `OPENAI_API_KEY`
-  - `TIDB_CLOUD_REGION`, `TIDB_CLOUD_DATABASE_ENDPOINT`
-
-## Setup
+## Local development
 ```bash
 npm install
-
-# Bootstrap TiDB schema (creates the schema + tables and regenerates typed bindings)
-npm run migrate:init       # one-time schema creation
-npm run migrate:up         # run pending migrations
-
-# Create your first local operator seeded with GitHub + password credentials
-node scripts/setup-local-user.js
-# (Use scripts/gen-password.js if you only need to hash a password with BCRYPT_SALT)
-
-# Launch the workspace
 npm run dev
 ```
-Visit `http://localhost:3000/login`, authenticate with the user you just created, and start creating projects or sessions.
 
 ## Core npm Scripts
 | Command | Description |
@@ -186,6 +113,3 @@ Visit `http://localhost:3000/login`, authenticate with the user you just created
 | `npm run build` / `npm run start` | Compile and serve the production bundle. |
 | `npm run lint` | Run Biome lint rules (Next/React presets). |
 | `npm run format` | Apply Biome formatting in-place. |
-| `npm run migrate:init|up|down` | Execute the TiDB schema bootstrap/migration workflow in `scripts/migrate.ts` and regenerate `src/lib/db/schema.d.ts`. |
-| `npm run install-shadcn-components` | Re-sync shadcn/ui components based on `components.json`. |
-# OlyneroAI-project

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -114,7 +114,8 @@ export function ProjectChat({
               ? {
                   ...message,
                   status: "error",
-                  content: error instanceof Error ? error.message : String(error),
+                  content:
+                    error instanceof Error ? error.message : String(error),
                 }
               : message,
           ),
@@ -129,9 +130,7 @@ export function ProjectChat({
           key={message.id}
           className={cn(
             "flex flex-col gap-2 rounded-xl border border-border/60 p-4",
-            message.role === "user"
-              ? "bg-card/80"
-              : "bg-muted/30",
+            message.role === "user" ? "bg-card/80" : "bg-muted/30",
           )}
         >
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
@@ -152,9 +151,7 @@ export function ProjectChat({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 space-y-4 overflow-y-auto p-6">
-        {messageItems}
-      </div>
+      <div className="flex-1 space-y-4 overflow-y-auto p-6">{messageItems}</div>
       <div className="border-t border-border/60 p-4">
         <div className="space-y-3">
           <Textarea

@@ -1,5 +1,8 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import Form from "next/form";
+import { useState } from "react";
 import { setVercelBlobStorage } from "@/actions/user-settings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,9 +22,6 @@ import {
 } from "@/components/ui/select";
 import { VercelTeamSelect } from "@/components/vercel-team-select";
 import type { VercelBlobStorageDetails } from "@/lib/vercel/blobs";
-import { useQuery } from "@tanstack/react-query";
-import Form from "next/form";
-import { useState } from "react";
 
 export function VercelBlobStorageSetup({
   vercelBlobId,

@@ -44,7 +44,10 @@ export async function POST(
     .single();
 
   if (buildError || !build) {
-    return NextResponse.json({ message: "Failed to create build" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to create build" },
+      { status: 500 },
+    );
   }
 
   const runnerUrl = await getRunnerUrl();
@@ -80,7 +83,10 @@ export async function POST(
     return NextResponse.json({ message: errorText }, { status: 500 });
   }
 
-  await supabase.from("builds").update({ status: "running" }).eq("id", build.id);
+  await supabase
+    .from("builds")
+    .update({ status: "running" })
+    .eq("id", build.id);
 
   return NextResponse.json({
     buildId: build.id,

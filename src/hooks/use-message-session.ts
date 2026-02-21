@@ -1,13 +1,13 @@
-import { handleFetchResponseError } from "@/lib/errors";
 import {
   parseJsonEventStream,
   readUIMessageStream,
   type UIDataTypes,
   type UIMessage,
-  uiMessageChunkSchema,
   type UITools,
+  uiMessageChunkSchema,
 } from "ai";
 import { useEffect, useState } from "react";
+import { handleFetchResponseError } from "@/lib/errors";
 
 export function useMessageSession<Tools extends UITools>(sessionId: string) {
   const [version, setVersion] = useState<number>(0);

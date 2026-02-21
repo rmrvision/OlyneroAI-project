@@ -24,7 +24,8 @@ export function BuildHistory({ projectId }: { projectId: string }) {
     setBuilds(payload.builds ?? []);
 
     const hasRunning = (payload.builds ?? []).some(
-      (build: BuildItem) => build.status === "running" || build.status === "queued",
+      (build: BuildItem) =>
+        build.status === "running" || build.status === "queued",
     );
     setPolling(hasRunning);
   };

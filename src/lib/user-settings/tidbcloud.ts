@@ -1,6 +1,6 @@
-import type { SiteSettings } from '@/lib/system-settings';
+import type { SiteSettings } from "@/lib/system-settings";
 
-export function isTiDBCloudSettingsValid (
+export function isTiDBCloudSettingsValid(
   settings: SiteSettings | undefined | null,
 ): settings is SiteSettings & {
   tidbcloud_public_key: string;

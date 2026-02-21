@@ -24,7 +24,9 @@ export function AutoCollapse({
     const content = contentRef.current;
     if (content && enable) {
       const ro = new ResizeObserver(([entry]) => {
-        setIsTooTall(entry!.contentRect.height > collapseThresholdHeight);
+        setIsTooTall(
+          (entry?.contentRect.height ?? 0) > collapseThresholdHeight,
+        );
       });
 
       setIsTooTall(content.clientHeight > collapseThresholdHeight);

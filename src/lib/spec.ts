@@ -43,8 +43,10 @@ export type ProjectSpec = z.infer<typeof projectSpecSchema>;
 function guessFieldType(name: string) {
   const lowered = name.toLowerCase();
   if (lowered.includes("email")) return "email" as const;
-  if (lowered.includes("phone") || lowered.includes("tel")) return "phone" as const;
-  if (lowered.includes("count") || lowered.includes("number")) return "number" as const;
+  if (lowered.includes("phone") || lowered.includes("tel"))
+    return "phone" as const;
+  if (lowered.includes("count") || lowered.includes("number"))
+    return "number" as const;
   return "text" as const;
 }
 
@@ -52,10 +54,15 @@ function parseCrud(prompt: string, projectName: string) {
   const match = prompt.match(/crud\s+([a-z0-9_\- ]+)(?:\(([^)]*)\))?/i);
   const rawEntity = match?.[1]?.trim() || "items";
   const entityName = snakeCase(rawEntity).replace(/\s+/g, "_");
-  const label = capitalCase(entityName.endsWith("s") ? entityName.slice(0, -1) : entityName);
+  const label = capitalCase(
+    entityName.endsWith("s") ? entityName.slice(0, -1) : entityName,
+  );
 
   const rawFields = match?.[2]
-    ? match[2].split(",").map((item) => item.trim()).filter(Boolean)
+    ? match[2]
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
     : [];
 
   const fields = (rawFields.length > 0 ? rawFields : ["name"]).map((field) => {
@@ -80,7 +87,8 @@ function parseCrud(prompt: string, projectName: string) {
 
 function parseLanding(prompt: string, projectName: string) {
   const cleanPrompt = prompt.trim();
-  const headline = cleanPrompt.length > 10 ? cleanPrompt : `Launch ${projectName} faster.`;
+  const headline =
+    cleanPrompt.length > 10 ? cleanPrompt : `Launch ${projectName} faster.`;
   const subheadline =
     cleanPrompt.length > 10
       ? "A focused landing experience crafted from your brief."
@@ -95,11 +103,13 @@ function parseLanding(prompt: string, projectName: string) {
     sections: [
       {
         title: "Instant positioning",
-        description: "Capture the core value proposition with a crisp narrative.",
+        description:
+          "Capture the core value proposition with a crisp narrative.",
       },
       {
         title: "Fast iteration",
-        description: "Iterate messaging and visuals without rebuilding layouts.",
+        description:
+          "Iterate messaging and visuals without rebuilding layouts.",
       },
       {
         title: "Launch-ready",
@@ -109,7 +119,10 @@ function parseLanding(prompt: string, projectName: string) {
   };
 }
 
-export function parsePromptToSpec(prompt: string, projectName: string): ProjectSpec {
+export function parsePromptToSpec(
+  prompt: string,
+  projectName: string,
+): ProjectSpec {
   const normalized = prompt.toLowerCase();
   const spec = normalized.includes("crud")
     ? parseCrud(prompt, projectName)

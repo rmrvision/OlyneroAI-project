@@ -14,7 +14,7 @@ export function AnsiLogs({ raw }: { raw: string }) {
 
   return (
     <div className="whitespace-pre-wrap text-xs font-mono">
-      {/** biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation> */}
+      {/** biome-ignore lint/security/noDangerouslySetInnerHtml: render sanitized ANSI logs */}
       <span dangerouslySetInnerHTML={{ __html: parsed }} />
     </div>
   );

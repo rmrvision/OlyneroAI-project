@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { requireAdmin } from "@/lib/admin";
 import { getPublicSupabaseUrl } from "@/lib/env";
 import { getAppOrigin, getRunnerUrl, signRunnerPayload } from "@/lib/runner";
+import { type ProjectSpec, projectSpecSchema } from "@/lib/spec";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { checkEndpoint } from "@/lib/system-health";
 import { getTemplateCatalog } from "@/lib/templates";
-import { projectSpecSchema, type ProjectSpec } from "@/lib/spec";
 
 function parseBuildPayload(logs: string | null): {
   spec: ProjectSpec | null;
@@ -82,7 +82,10 @@ async function toggleUserDisabled(formData: FormData) {
   if (!userId) return;
 
   const supabase = createSupabaseAdminClient();
-  await supabase.from("profiles").update({ is_disabled: disabled }).eq("id", userId);
+  await supabase
+    .from("profiles")
+    .update({ is_disabled: disabled })
+    .eq("id", userId);
 
   await logAdminAction(
     "user.disabled.update",
@@ -141,7 +144,10 @@ async function transferProject(formData: FormData) {
     throw new Error("Owner not found");
   }
 
-  await supabase.from("projects").update({ owner_id: ownerId }).eq("id", projectId);
+  await supabase
+    .from("projects")
+    .update({ owner_id: ownerId })
+    .eq("id", projectId);
 
   await logAdminAction(
     "project.transfer",
@@ -279,7 +285,9 @@ export default async function AdminPage() {
         .limit(50),
       supabase
         .from("builds")
-        .select("id,project_id,status,created_at,preview_url,artifact_path,logs")
+        .select(
+          "id,project_id,status,created_at,preview_url,artifact_path,logs",
+        )
         .order("created_at", { ascending: false })
         .limit(20),
       supabase
@@ -307,7 +315,8 @@ export default async function AdminPage() {
       <div>
         <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="text-sm text-muted-foreground">
-          Full control over users, projects, builds, templates, and system health.
+          Full control over users, projects, builds, templates, and system
+          health.
         </p>
       </div>
 
@@ -326,8 +335,12 @@ export default async function AdminPage() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="font-medium text-foreground">{user.email}</div>
-                    <div className="text-xs text-muted-foreground">{user.id}</div>
+                    <div className="font-medium text-foreground">
+                      {user.email}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {user.id}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{user.role}</Badge>
@@ -337,7 +350,10 @@ export default async function AdminPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <form action={updateUserRole} className="flex items-center gap-2">
+                  <form
+                    action={updateUserRole}
+                    className="flex items-center gap-2"
+                  >
                     <input type="hidden" name="userId" value={user.id} />
                     <select
                       name="role"
@@ -390,8 +406,12 @@ export default async function AdminPage() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="font-medium text-foreground">{project.name}</div>
-                    <div className="text-xs text-muted-foreground">{project.id}</div>
+                    <div className="font-medium text-foreground">
+                      {project.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {project.id}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       Owner: {project.owner_id}
                     </div>
@@ -399,7 +419,10 @@ export default async function AdminPage() {
                   <Badge variant="secondary">{project.status}</Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <form action={transferProject} className="flex items-center gap-2">
+                  <form
+                    action={transferProject}
+                    className="flex items-center gap-2"
+                  >
                     <input type="hidden" name="projectId" value={project.id} />
                     <Input
                       name="newOwner"
@@ -441,7 +464,9 @@ export default async function AdminPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div className="font-medium text-foreground">{build.id}</div>
+                      <div className="font-medium text-foreground">
+                        {build.id}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         Project: {build.project_id}
                       </div>
@@ -503,7 +528,9 @@ export default async function AdminPage() {
               className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2"
             >
               <div>
-                <div className="font-medium text-foreground">{template.name}</div>
+                <div className="font-medium text-foreground">
+                  {template.name}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {template.description}
                 </div>
@@ -528,7 +555,9 @@ export default async function AdminPage() {
                 className="rounded-lg border border-border/60 px-3 py-2"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="font-medium text-foreground">{entry.action}</div>
+                  <div className="font-medium text-foreground">
+                    {entry.action}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {new Date(entry.created_at).toLocaleString()}
                   </div>
