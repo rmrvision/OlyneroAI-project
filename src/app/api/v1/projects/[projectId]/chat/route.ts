@@ -1,68 +1,92 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateProjectFiles } from "@/lib/ai/codegen";
+import { iterateProjectFiles, type GeneratedFile } from "@/lib/ai/codegen";
 import { getSessionUser } from "@/lib/auth";
 import { getAppOrigin, getRunnerUrl, signRunnerPayload } from "@/lib/runner";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const requestSchema = z.object({
   prompt: z.string().min(3),
-  projectName: z.string().min(1).max(80).optional(),
 });
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { prompt, projectName } = requestSchema.parse(await request.json());
+  const { projectId } = await params;
+  const { prompt } = requestSchema.parse(await request.json());
 
-  // Step 1: Generate real React files with AI
-  let codegenResult: Awaited<ReturnType<typeof generateProjectFiles>>;
+  const supabase = await createSupabaseServerClient();
+
+  // Get project and verify ownership
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("id,name,owner_id")
+    .eq("id", projectId)
+    .single();
+
+  if (projectError || !project || project.owner_id !== user.id) {
+    return NextResponse.json({ message: "Project not found" }, { status: 404 });
+  }
+
+  // Get latest build to extract existing files
+  const { data: latestBuild } = await supabase
+    .from("builds")
+    .select("id,logs")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  let existingFiles: GeneratedFile[] = [];
+  if (latestBuild?.logs) {
+    try {
+      const parsed = JSON.parse(latestBuild.logs as string);
+      existingFiles = parsed?.files ?? [];
+    } catch {
+      existingFiles = [];
+    }
+  }
+
+  // Generate updated files with AI
+  let iterResult: Awaited<ReturnType<typeof iterateProjectFiles>>;
   try {
-    codegenResult = await generateProjectFiles({ prompt, projectName });
+    iterResult = await iterateProjectFiles({ prompt, existingFiles });
   } catch (error) {
     const message =
-      error instanceof Error
-        ? error.message
-        : "Не удалось сгенерировать код";
+      error instanceof Error ? error.message : "Не удалось обработать запрос";
     return NextResponse.json({ message }, { status: 400 });
   }
 
-  // Step 2: Create project in DB
-  const supabase = await createSupabaseServerClient();
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .insert({
-      owner_id: user.id,
-      name: codegenResult.projectName,
-      description: prompt,
-      status: "draft",
-    })
-    .select("id,name,owner_id")
-    .single();
-
-  if (projectError || !project) {
-    return NextResponse.json(
-      { message: "Failed to create project" },
-      { status: 500 },
-    );
+  // Merge updated files with existing files
+  const updatedFilesMap = new Map<string, string>(
+    existingFiles.map((f) => [f.path, f.content]),
+  );
+  for (const f of iterResult.files) {
+    updatedFilesMap.set(f.path, f.content);
   }
+  const mergedFiles: GeneratedFile[] = Array.from(updatedFilesMap.entries()).map(
+    ([path, content]) => ({ path, content }),
+  );
 
-  // Step 3: Create build record with generated files stored in logs
+  // Create new build record
   const { data: build, error: buildError } = await supabase
     .from("builds")
     .insert({
       project_id: project.id,
       status: "queued",
       logs: JSON.stringify({
-        files: codegenResult.files,
-        description: codegenResult.description,
+        files: mergedFiles,
+        description: iterResult.description,
         logs: [],
       }),
     })
-    .select("id,status,created_at")
+    .select("id,status")
     .single();
 
   if (buildError || !build) {
@@ -72,7 +96,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Step 4: Send to runner with files (new AI mode)
+  // Send to runner
   const runnerUrl = await getRunnerUrl();
   const callbackUrl = `${await getAppOrigin()}/api/v1/runner/callback`;
   const artifactUploadUrl = `${await getAppOrigin()}/api/v1/runner/artifact`;
@@ -81,7 +105,7 @@ export async function POST(request: Request) {
     buildId: build.id,
     projectId: project.id,
     projectName: project.name,
-    files: codegenResult.files,
+    files: mergedFiles,
     callbackUrl,
     artifactUploadUrl,
   };
@@ -100,7 +124,6 @@ export async function POST(request: Request) {
   if (!runnerResponse.ok) {
     const errorText = await runnerResponse.text();
     await supabase.from("builds").update({ status: "error" }).eq("id", build.id);
-    await supabase.from("projects").update({ status: "error" }).eq("id", project.id);
     return NextResponse.json({ message: errorText }, { status: 500 });
   }
 
@@ -108,10 +131,9 @@ export async function POST(request: Request) {
   await supabase.from("projects").update({ status: "running" }).eq("id", project.id);
 
   return NextResponse.json({
-    projectId: project.id,
     buildId: build.id,
     status: "running",
-    description: codegenResult.description,
-    filesCount: codegenResult.files.length,
+    description: iterResult.description,
+    changedFiles: iterResult.files.length,
   });
 }

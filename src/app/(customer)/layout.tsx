@@ -23,10 +23,8 @@ export default async function MainLayout({
   return (
     <>
       <AppSidebar projects={projects} />
-      <SidebarInset className="h-screen">
-        <div className="w-full flex-1 overflow-hidden">
-          <div className="size-full overflow-hidden p-4">{children}</div>
-        </div>
+      <SidebarInset className="h-screen overflow-hidden">
+        <div className="size-full overflow-hidden">{children}</div>
       </SidebarInset>
     </>
   );
