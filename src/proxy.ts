@@ -5,7 +5,8 @@ export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   if (
-    ["/projects", "/settings", "/"].includes(path) ||
+    ["/projects", "/settings", "/app"].includes(path) ||
+    path.startsWith("/app/") ||
     path.startsWith("/api/v1/") ||
     path.startsWith("/debug/") ||
     path.startsWith("/projects/") ||
