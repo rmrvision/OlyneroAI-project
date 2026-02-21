@@ -3,6 +3,23 @@ OlyneroAI is a Lovable-like app builder. Describe a landing or CRUD app and get 
 
 > This repo is currently based on the PingCAP full-stack app builder agent and is being refit for Supabase + self-hosted runner in v0.1.
 
+## Supabase Setup (v0.1)
+Apply the initial schema and RLS policies:
+
+1. Open Supabase Studio → **SQL Editor**.
+2. Paste and run the SQL from `migrations/supabase/001_olyneroai_init.sql`.
+
+### Admin Bootstrap
+Promote a user to admin by email (run in SQL Editor):
+
+```sql
+insert into public.profiles (id, email, display_name, role)
+select id, email, coalesce(raw_user_meta_data->>'display_name', email), 'admin'
+from auth.users
+where email = 'admin@example.com'
+on conflict (id) do update set role = 'admin';
+```
+
 ## What This Agent Can Do
 - Generate complete web apps from a prompt (Next.js 16 + shadcn/Tailwind).
 - Provision TiDB Cloud clusters/branches per project and per instruction.
