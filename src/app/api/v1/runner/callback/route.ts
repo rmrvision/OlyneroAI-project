@@ -17,20 +17,25 @@ export async function POST(request: Request) {
   }
 
   const supabase = createSupabaseAdminClient();
+
+  // Load existing build data
   const { data: existing } = await supabase
     .from("builds")
-    .select("logs")
+    .select("id,project_id,logs")
     .eq("id", buildId)
     .single();
 
+  // Parse existing stored data — preserve files and description fields
   let existingLogs: string[] = [];
-  let existingSpec: unknown = null;
+  let existingFiles: unknown = null;
+  let existingDescription: string | null = null;
 
   if (existing?.logs) {
     try {
       const parsed = JSON.parse(existing.logs as string);
       existingLogs = parsed?.logs ?? [];
-      existingSpec = parsed?.spec ?? null;
+      existingFiles = parsed?.files ?? null;
+      existingDescription = parsed?.description ?? null;
     } catch {
       existingLogs = [String(existing.logs)];
     }
@@ -38,15 +43,28 @@ export async function POST(request: Request) {
 
   const nextLogs = [...existingLogs, ...(logs ?? [])];
 
+  // Save updated data preserving all fields
   await supabase
     .from("builds")
     .update({
       status: status ?? "running",
-      logs: JSON.stringify({ spec: existingSpec, logs: nextLogs }),
-      preview_url: previewUrl ?? undefined,
-      artifact_path: artifactPath ?? undefined,
+      logs: JSON.stringify({
+        files: existingFiles,
+        description: existingDescription,
+        logs: nextLogs,
+      }),
+      ...(previewUrl ? { preview_url: previewUrl } : {}),
+      ...(artifactPath ? { artifact_path: artifactPath } : {}),
     })
     .eq("id", buildId);
+
+  // Update project status when build finishes
+  if (existing?.project_id && (status === "success" || status === "error")) {
+    await supabase
+      .from("projects")
+      .update({ status })
+      .eq("id", existing.project_id);
+  }
 
   return NextResponse.json({ ok: true });
 }
