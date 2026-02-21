@@ -56,74 +56,70 @@ export function LoginForm({
                 }
 
                 setRedirected(true);
-                window.location.href = callbackUrl ?? "/";
+                window.location.href = callbackUrl ?? "/app";
               });
             }}
           >
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome back</h1>
+                <h1 className="text-2xl font-semibold">
+                  {mode === "login" ? "Добро пожаловать" : "Создать аккаунт"}
+                </h1>
                 <p className="text-muted-foreground text-balance">
                   {mode === "login"
-                    ? "Login to your OlyneroAI account"
-                    : "Create your OlyneroAI account"}
+                    ? "Войдите в OlyneroAI, чтобы продолжить"
+                    : "Создайте аккаунт за минуту"}
                 </p>
               </div>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  name="email"
-                  placeholder="user@example.com"
-                  required
-                  disabled={transitioning || redirected}
-                />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="/forgot-password"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  disabled={transitioning || redirected}
-                />
-              </Field>
-              {(error || localError) && (
-                <Alert variant="destructive">
-                  <AlertTitle>Failed to login</AlertTitle>
-                  <AlertDescription>{localError ?? error}</AlertDescription>
-                </Alert>
-              )}
-              <Field>
-                <Button type="submit" disabled={transitioning || redirected}>
-                  {mode === "login" ? "Login" : "Create account"}
-                </Button>
-              </Field>
-              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                {mode === "login" ? "New here?" : "Have an account?"}
-              </FieldSeparator>
-              <Field className="grid grid-cols-1 gap-4">
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={transitioning || redirected}
-                  onClick={() => {
-                    setLocalError(null);
-                    setMode(mode === "login" ? "signup" : "login");
-                  }}
-                >
-                  {mode === "login" ? "Create account" : "Back to login"}
-                </Button>
-              </Field>
+              <FieldLabel htmlFor="email">Эл. почта</FieldLabel>
+              <Input
+                id="email"
+                name="email"
+                placeholder="name@company.com"
+                required
+                disabled={transitioning || redirected}
+              />
+            </Field>
+            <Field>
+              <div className="flex items-center">
+                <FieldLabel htmlFor="password">Пароль</FieldLabel>
+              </div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                disabled={transitioning || redirected}
+              />
+            </Field>
+            {(error || localError) && (
+              <Alert variant="destructive">
+                <AlertTitle>Не удалось войти</AlertTitle>
+                <AlertDescription>{localError ?? error}</AlertDescription>
+              </Alert>
+            )}
+            <Field>
+              <Button type="submit" disabled={transitioning || redirected}>
+                {mode === "login" ? "Войти" : "Создать аккаунт"}
+              </Button>
+            </Field>
+            <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+              {mode === "login" ? "Впервые здесь?" : "Уже есть аккаунт?"}
+            </FieldSeparator>
+            <Field className="grid grid-cols-1 gap-4">
+              <Button
+                variant="outline"
+                type="button"
+                disabled={transitioning || redirected}
+                onClick={() => {
+                  setLocalError(null);
+                  setMode(mode === "login" ? "signup" : "login");
+                }}
+              >
+                {mode === "login" ? "Создать аккаунт" : "Вернуться к входу"}
+              </Button>
+            </Field>
               {/*<FieldDescription className="text-center">*/}
               {/*  Don&apos;t have an account? <a href="#">Sign up</a>*/}
               {/*</FieldDescription>*/}
@@ -132,9 +128,9 @@ export function LoginForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our{" "}
-        <a href="/terms">Terms of Service</a> and{" "}
-        <a href="/privacy">Privacy Policy</a>.
+        Продолжая, вы соглашаетесь с{" "}
+        <a href="/terms">условиями сервиса</a> и{" "}
+        <a href="/privacy">политикой конфиденциальности</a>.
       </FieldDescription>
     </div>
   );

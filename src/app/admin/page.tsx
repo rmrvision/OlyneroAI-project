@@ -303,6 +303,18 @@ export default async function AdminPage() {
   const builds = buildsResult.data ?? [];
   const audit = auditResult.data ?? [];
 
+  const roleLabels: Record<string, string> = {
+    user: "пользователь",
+    admin: "админ",
+  };
+  const statusLabels: Record<string, string> = {
+    draft: "черновик",
+    queued: "в очереди",
+    running: "в работе",
+    success: "готово",
+    error: "ошибка",
+  };
+
   const supabaseUrl = getPublicSupabaseUrl();
   const runnerUrl = await getRunnerUrl();
   const [supabaseHealth, runnerHealth] = await Promise.all([
@@ -310,300 +322,369 @@ export default async function AdminPage() {
     checkEndpoint(`${runnerUrl}/health`),
   ]);
 
+  const sections = [
+    { id: "users", label: "Пользователи" },
+    { id: "projects", label: "Проекты" },
+    { id: "builds", label: "Сборки" },
+    { id: "templates", label: "Шаблоны" },
+    { id: "audit", label: "Аудит" },
+    { id: "health", label: "Состояние" },
+  ];
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-muted-foreground">
-          Full control over users, projects, builds, templates, and system
-          health.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {users.length === 0 ? (
-            <p className="text-muted-foreground">No users yet.</p>
-          ) : (
-            users.map((user) => (
-              <div
-                key={user.id}
-                className="flex flex-col gap-3 rounded-lg border border-border/60 p-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="font-medium text-foreground">
-                      {user.email}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {user.id}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{user.role}</Badge>
-                    {user.is_disabled ? (
-                      <Badge variant="destructive">disabled</Badge>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <form
-                    action={updateUserRole}
-                    className="flex items-center gap-2"
-                  >
-                    <input type="hidden" name="userId" value={user.id} />
-                    <select
-                      name="role"
-                      defaultValue={user.role ?? "user"}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                    >
-                      <option value="user">user</option>
-                      <option value="admin">admin</option>
-                    </select>
-                    <Button type="submit" size="sm" variant="secondary">
-                      Update role
-                    </Button>
-                  </form>
-                  <form action={toggleUserDisabled}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <input
-                      type="hidden"
-                      name="disabled"
-                      value={user.is_disabled ? "false" : "true"}
-                    />
-                    <Button type="submit" size="sm" variant="destructive">
-                      {user.is_disabled ? "Enable" : "Disable"}
-                    </Button>
-                  </form>
-                  <form action={resetUserLimits}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <Button type="submit" size="sm" variant="outline">
-                      Reset limits
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Projects</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {projects.length === 0 ? (
-            <p className="text-muted-foreground">No projects yet.</p>
-          ) : (
-            projects.map((project) => (
-              <div
-                key={project.id}
-                className="flex flex-col gap-3 rounded-lg border border-border/60 p-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="font-medium text-foreground">
-                      {project.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {project.id}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Owner: {project.owner_id}
-                    </div>
-                  </div>
-                  <Badge variant="secondary">{project.status}</Badge>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <form
-                    action={transferProject}
-                    className="flex items-center gap-2"
-                  >
-                    <input type="hidden" name="projectId" value={project.id} />
-                    <Input
-                      name="newOwner"
-                      placeholder="New owner email or id"
-                      className="w-56"
-                    />
-                    <Button type="submit" size="sm" variant="secondary">
-                      Transfer
-                    </Button>
-                  </form>
-                  <form action={deleteProject}>
-                    <input type="hidden" name="projectId" value={project.id} />
-                    <Button type="submit" size="sm" variant="destructive">
-                      Delete
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Builds</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {builds.length === 0 ? (
-            <p className="text-muted-foreground">No builds yet.</p>
-          ) : (
-            builds.map((build) => {
-              const parsed = parseBuildPayload(build.logs ?? null);
-              const logText = parsed.logs.slice(-20).join("");
-              return (
-                <div
-                  key={build.id}
-                  className="flex flex-col gap-3 rounded-lg border border-border/60 p-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {build.id}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Project: {build.project_id}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(build.created_at).toLocaleString()}
-                      </div>
-                    </div>
-                    <Badge variant="secondary">{build.status}</Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {build.preview_url ? (
-                      <a
-                        className="text-xs underline"
-                        href={build.preview_url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Preview
-                      </a>
-                    ) : null}
-                    {build.artifact_path ? (
-                      <a
-                        className="text-xs underline"
-                        href={`/api/v1/builds/${build.id}/artifact`}
-                      >
-                        Download zip
-                      </a>
-                    ) : null}
-                    <form action={restartBuild}>
-                      <input type="hidden" name="buildId" value={build.id} />
-                      <Button type="submit" size="sm" variant="outline">
-                        Restart
-                      </Button>
-                    </form>
-                  </div>
-                  <details>
-                    <summary className="cursor-pointer text-xs text-muted-foreground">
-                      View logs
-                    </summary>
-                    <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted/40 p-3 text-xs text-foreground">
-                      {logText || "No logs yet."}
-                    </pre>
-                  </details>
-                </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Templates</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {templates.map((template) => (
-            <div
-              key={template.key}
-              className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2"
+    <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="sticky top-6 flex h-fit flex-col gap-4 rounded-2xl border border-border/60 bg-card/70 p-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            Админка
+          </p>
+          <h1 className="text-xl font-semibold">OlyneroAI</h1>
+        </div>
+        <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
+          {sections.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="rounded-lg px-2 py-1.5 transition hover:bg-muted/40 hover:text-foreground"
             >
-              <div>
-                <div className="font-medium text-foreground">
-                  {template.name}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {template.description}
-                </div>
-              </div>
-              <Badge variant="secondary">v{template.version}</Badge>
-            </div>
+              {section.label}
+            </a>
           ))}
-        </CardContent>
-      </Card>
+        </nav>
+      </aside>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Audit log</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {audit.length === 0 ? (
-            <p className="text-muted-foreground">No audit entries yet.</p>
-          ) : (
-            audit.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-lg border border-border/60 px-3 py-2"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="font-medium text-foreground">
-                    {entry.action}
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-2xl font-semibold">Администрирование</h2>
+          <p className="text-sm text-muted-foreground">
+            Управляйте пользователями, проектами, сборками и системными
+            параметрами.
+          </p>
+        </div>
+
+        <section id="users" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>Пользователи</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {users.length === 0 ? (
+                <p className="text-muted-foreground">Пользователей пока нет.</p>
+              ) : (
+                users.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {user.email}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.id}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">
+                          {roleLabels[user.role] ?? user.role}
+                        </Badge>
+                        {user.is_disabled ? (
+                          <Badge variant="destructive">заблокирован</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <form
+                        action={updateUserRole}
+                        className="flex items-center gap-2"
+                      >
+                        <input type="hidden" name="userId" value={user.id} />
+                        <select
+                          name="role"
+                          defaultValue={user.role ?? "user"}
+                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        >
+                          <option value="user">пользователь</option>
+                          <option value="admin">админ</option>
+                        </select>
+                        <Button type="submit" size="sm" variant="secondary">
+                          Сохранить роль
+                        </Button>
+                      </form>
+                      <form action={toggleUserDisabled}>
+                        <input type="hidden" name="userId" value={user.id} />
+                        <input
+                          type="hidden"
+                          name="disabled"
+                          value={user.is_disabled ? "false" : "true"}
+                        />
+                        <Button type="submit" size="sm" variant="destructive">
+                          {user.is_disabled
+                            ? "Разблокировать"
+                            : "Заблокировать"}
+                        </Button>
+                      </form>
+                      <form action={resetUserLimits}>
+                        <input type="hidden" name="userId" value={user.id} />
+                        <Button type="submit" size="sm" variant="outline">
+                          Сбросить лимиты
+                        </Button>
+                      </form>
+                    </div>
                   </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="projects" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>Проекты</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {projects.length === 0 ? (
+                <p className="text-muted-foreground">Проектов пока нет.</p>
+              ) : (
+                projects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {project.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {project.id}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Владелец: {project.owner_id}
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {statusLabels[project.status] ?? project.status}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <form
+                        action={transferProject}
+                        className="flex items-center gap-2"
+                      >
+                        <input
+                          type="hidden"
+                          name="projectId"
+                          value={project.id}
+                        />
+                        <Input
+                          name="newOwner"
+                          placeholder="Новый владелец (email или id)"
+                          className="w-64"
+                        />
+                        <Button type="submit" size="sm" variant="secondary">
+                          Передать
+                        </Button>
+                      </form>
+                      <form action={deleteProject}>
+                        <input
+                          type="hidden"
+                          name="projectId"
+                          value={project.id}
+                        />
+                        <Button type="submit" size="sm" variant="destructive">
+                          Удалить
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="builds" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>Сборки</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {builds.length === 0 ? (
+                <p className="text-muted-foreground">Сборок пока нет.</p>
+              ) : (
+                builds.map((build) => {
+                  const parsed = parseBuildPayload(build.logs ?? null);
+                  const logText = parsed.logs.slice(-20).join("");
+                  return (
+                    <div
+                      key={build.id}
+                      className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {build.id}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Проект: {build.project_id}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(build.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                        <Badge variant="secondary">
+                          {statusLabels[build.status] ?? build.status}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {build.preview_url ? (
+                          <a
+                            className="text-xs underline"
+                            href={build.preview_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Превью
+                          </a>
+                        ) : null}
+                        {build.artifact_path ? (
+                          <a
+                            className="text-xs underline"
+                            href={`/api/v1/builds/${build.id}/artifact`}
+                          >
+                            Скачать zip
+                          </a>
+                        ) : null}
+                        <form action={restartBuild}>
+                          <input
+                            type="hidden"
+                            name="buildId"
+                            value={build.id}
+                          />
+                          <Button type="submit" size="sm" variant="outline">
+                            Перезапустить
+                          </Button>
+                        </form>
+                      </div>
+                      <details>
+                        <summary className="cursor-pointer text-xs text-muted-foreground">
+                          Логи сборки
+                        </summary>
+                        <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted/40 p-3 text-xs text-foreground">
+                          {logText || "Логи пока отсутствуют."}
+                        </pre>
+                      </details>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="templates" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>Шаблоны</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {templates.map((template) => (
+                <div
+                  key={template.key}
+                  className="flex items-center justify-between rounded-lg border border-border/60 bg-card/60 px-3 py-2"
+                >
+                  <div>
+                    <div className="font-medium text-foreground">
+                      {template.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {template.description}
+                    </div>
+                  </div>
+                  <Badge variant="secondary">v{template.version}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="audit" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>Аудит</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {audit.length === 0 ? (
+                <p className="text-muted-foreground">Записей пока нет.</p>
+              ) : (
+                audit.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-lg border border-border/60 bg-card/60 px-3 py-2"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-medium text-foreground">
+                        {entry.action}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(entry.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {entry.entity_type} {entry.entity_id ?? ""}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Актор: {entry.actor_id ?? "system"}
+                    </div>
+                    {entry.metadata ? (
+                      <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/40 p-2 text-xs text-foreground">
+                        {JSON.stringify(entry.metadata, null, 2)}
+                      </pre>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="health" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>Состояние системы</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-foreground">Supabase</div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(entry.created_at).toLocaleString()}
+                    {supabaseUrl}
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {entry.entity_type} {entry.entity_id ?? ""}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Actor: {entry.actor_id ?? "system"}
-                </div>
-                {entry.metadata ? (
-                  <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/40 p-2 text-xs text-foreground">
-                    {JSON.stringify(entry.metadata, null, 2)}
-                  </pre>
-                ) : null}
+                <Badge
+                  variant={supabaseHealth.ok ? "secondary" : "destructive"}
+                >
+                  {supabaseHealth.ok ? "в норме" : "недоступно"}
+                </Badge>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>System health</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-foreground">Supabase</div>
-              <div className="text-xs text-muted-foreground">{supabaseUrl}</div>
-            </div>
-            <Badge variant={supabaseHealth.ok ? "secondary" : "destructive"}>
-              {supabaseHealth.ok ? "ok" : "down"}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-foreground">Runner</div>
-              <div className="text-xs text-muted-foreground">{runnerUrl}</div>
-            </div>
-            <Badge variant={runnerHealth.ok ? "secondary" : "destructive"}>
-              {runnerHealth.ok ? "ok" : "down"}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-foreground">Runner</div>
+                  <div className="text-xs text-muted-foreground">
+                    {runnerUrl}
+                  </div>
+                </div>
+                <Badge variant={runnerHealth.ok ? "secondary" : "destructive"}>
+                  {runnerHealth.ok ? "в норме" : "недоступно"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
     </div>
   );
 }
