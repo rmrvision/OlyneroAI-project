@@ -41,23 +41,31 @@ export default async function ProjectChatPage({
     }
   }
 
+  const statusLabels: Record<string, string> = {
+    draft: "черновик",
+    queued: "в очереди",
+    running: "в работе",
+    success: "готово",
+    error: "ошибка",
+  };
+
   return (
     <div className="grid h-full grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <Card className="flex h-full flex-col overflow-hidden">
+      <Card className="flex h-full flex-col overflow-hidden border-border/60 bg-card/70">
         <CardHeader className="border-b border-border/60">
           <CardTitle className="flex items-center justify-between">
             <span className="text-lg">{project.name}</span>
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              {project.status}
+              {statusLabels[project.status] ?? project.status}
             </span>
           </CardTitle>
         </CardHeader>
         <ProjectChat projectId={project.id} projectName={project.name} />
       </Card>
       <div className="flex h-full flex-col gap-4">
-        <Card>
+        <Card className="border-border/60 bg-card/70">
           <CardHeader>
-            <CardTitle className="text-base">Spec</CardTitle>
+            <CardTitle className="text-base">Спецификация</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {latestSpec ? (
@@ -66,15 +74,15 @@ export default async function ProjectChatPage({
               </pre>
             ) : (
               <p>
-                Generate a spec from chat to see structured requirements here.
+                Здесь появится структурированная спецификация после генерации.
               </p>
             )}
           </CardContent>
         </Card>
         <BuildHistory projectId={project.id} />
-        <Card>
+        <Card className="border-border/60 bg-card/70">
           <CardHeader>
-            <CardTitle className="text-base">Preview links</CardTitle>
+            <CardTitle className="text-base">Превью и артефакты</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             <div className="space-y-2">
@@ -85,22 +93,20 @@ export default async function ProjectChatPage({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Open preview
+                  Открыть превью
                 </a>
               ) : (
-                <p>
-                  Preview URLs will appear after the first successful build.
-                </p>
+                <p>Ссылка на превью появится после успешной сборки.</p>
               )}
               {builds?.[0]?.artifact_path ? (
                 <a
                   className="underline"
                   href={`/api/v1/builds/${builds[0].id}/artifact`}
                 >
-                  Download zip
+                  Скачать zip
                 </a>
               ) : (
-                <p>Zip artifacts appear after the build finishes.</p>
+                <p>Zip‑архив появится после завершения сборки.</p>
               )}
             </div>
           </CardContent>

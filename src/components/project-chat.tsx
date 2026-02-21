@@ -17,10 +17,17 @@ type ChatMessage = {
 };
 
 const statusStyles: Record<MessageStatus, string> = {
-  planned: "bg-blue-500/15 text-blue-200",
+  planned: "bg-sky-500/15 text-sky-200",
   running: "bg-amber-500/15 text-amber-200",
   success: "bg-emerald-500/15 text-emerald-200",
   error: "bg-rose-500/15 text-rose-200",
+};
+
+const statusLabels: Record<MessageStatus, string> = {
+  planned: "план",
+  running: "сборка",
+  success: "готово",
+  error: "ошибка",
 };
 
 export function ProjectChat({
@@ -35,7 +42,7 @@ export function ProjectChat({
     {
       id: "welcome",
       role: "assistant",
-      content: `Describe the ${projectName} app you want to build.`,
+      content: `Опишите, что нужно сделать для проекта «${projectName}».`,
       status: "planned",
     },
   ]);
@@ -53,7 +60,7 @@ export function ProjectChat({
     const assistantMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "assistant",
-      content: "Drafting spec and preparing generation pipeline…",
+      content: "Готовим спецификацию и запускаем пайплайн генерации…",
       status: "planned",
     };
 
@@ -97,10 +104,10 @@ export function ProjectChat({
                         : "error",
                   content:
                     payload.status === "running"
-                      ? "Build started. Logs streaming in the right panel."
+                      ? "Сборка запущена. Логи появляются в правой панели."
                       : payload.status === "success"
-                        ? "Spec ready. Build completed."
-                        : "Build failed. Check logs in build history.",
+                        ? "Спецификация готова. Сборка завершена."
+                        : "Сборка завершилась ошибкой. Проверьте логи.",
                 }
               : message,
           ),
@@ -129,15 +136,15 @@ export function ProjectChat({
         <div
           key={message.id}
           className={cn(
-            "flex flex-col gap-2 rounded-xl border border-border/60 p-4",
+            "flex flex-col gap-2 rounded-xl border border-border/60 bg-card/60 p-4",
             message.role === "user" ? "bg-card/80" : "bg-muted/30",
           )}
         >
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
-            <span>{message.role === "user" ? "You" : "OlyneroAI"}</span>
+            <span>{message.role === "user" ? "Вы" : "OlyneroAI"}</span>
             {message.status ? (
               <Badge className={cn("border-0", statusStyles[message.status])}>
-                {message.status}
+                {statusLabels[message.status]}
               </Badge>
             ) : null}
           </div>
@@ -157,15 +164,15 @@ export function ProjectChat({
           <Textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Describe the landing or CRUD app you want to build..."
+            placeholder="Напишите: landing или crud customers(name, phone)..."
             rows={3}
           />
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Statuses: planned → running → success/error
+              Статусы: план → сборка → готово/ошибка
             </p>
             <Button onClick={handleSend} disabled={!canSend}>
-              Send
+              Отправить
             </Button>
           </div>
         </div>
