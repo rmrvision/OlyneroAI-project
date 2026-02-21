@@ -75,18 +75,30 @@ export default async function ProjectChatPage({
             <CardTitle className="text-base">Preview links</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            {builds && builds[0]?.preview_url ? (
-              <a
-                className="underline"
-                href={builds[0].preview_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open preview
-              </a>
-            ) : (
-              <p>Preview URLs will appear after the first successful build.</p>
-            )}
+            <div className="space-y-2">
+              {builds && builds[0]?.preview_url ? (
+                <a
+                  className="underline"
+                  href={builds[0].preview_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open preview
+                </a>
+              ) : (
+                <p>Preview URLs will appear after the first successful build.</p>
+              )}
+              {builds && builds[0]?.artifact_path ? (
+                <a
+                  className="underline"
+                  href={`/api/v1/builds/${builds[0].id}/artifact`}
+                >
+                  Download zip
+                </a>
+              ) : (
+                <p>Zip artifacts appear after the build finishes.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

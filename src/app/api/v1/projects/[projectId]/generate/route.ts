@@ -49,12 +49,14 @@ export async function POST(
 
   const runnerUrl = await getRunnerUrl();
   const callbackUrl = `${await getAppOrigin()}/api/v1/runner/callback`;
+  const artifactUploadUrl = `${await getAppOrigin()}/api/v1/runner/artifact`;
   const payload = {
     buildId: build.id,
     projectId: project.id,
     projectName: project.name,
     spec,
     callbackUrl,
+    artifactUploadUrl,
   };
 
   const { signature, timestamp, body } = signRunnerPayload(payload);

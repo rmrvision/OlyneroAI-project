@@ -43,7 +43,14 @@ app.post("/runs", async (req, res) => {
     return res.status(401).json({ message: "Invalid signature" });
   }
 
-  const { buildId, projectId, projectName, spec, callbackUrl } = req.body ?? {};
+  const {
+    buildId,
+    projectId,
+    projectName,
+    spec,
+    callbackUrl,
+    artifactUploadUrl,
+  } = req.body ?? {};
   if (!buildId || !projectId || !projectName || !spec) {
     return res.status(400).json({ message: "Missing payload" });
   }
@@ -58,6 +65,7 @@ app.post("/runs", async (req, res) => {
     projectName,
     spec,
     callbackUrl,
+    artifactUploadUrl,
   }).catch((error) => {
     console.error("Runner build failed", error);
   });
@@ -82,7 +90,15 @@ function verifySignature(req) {
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
-async function runBuild({ runId, buildId, projectId, projectName, spec, callbackUrl }) {
+async function runBuild({
+  runId,
+  buildId,
+  projectId,
+  projectName,
+  spec,
+  callbackUrl,
+  artifactUploadUrl,
+}) {
   const runDir = path.join(RUNS_ROOT, runId);
   await mkdir(runDir, { recursive: true });
 
@@ -115,6 +131,13 @@ async function runBuild({ runId, buildId, projectId, projectName, spec, callback
   }
 
   const artifactPath = await createZip(workspaceDir, runDir, appendLog);
+  if (artifactUploadUrl) {
+    await uploadArtifact(artifactUploadUrl, {
+      buildId,
+      projectId,
+      artifactPath,
+    });
+  }
 
   const status = buildResult.ok ? "success" : "error";
   await sendCallback(callbackUrl, {
@@ -126,7 +149,6 @@ async function runBuild({ runId, buildId, projectId, projectName, spec, callback
         : "Build failed.\n",
     ],
     previewUrl,
-    artifactPath,
   });
 }
 
@@ -373,5 +395,37 @@ async function sendCallback(callbackUrl, payload) {
     });
   } catch (error) {
     console.error("Callback failed", error);
+  }
+}
+
+async function uploadArtifact(artifactUploadUrl, { buildId, projectId, artifactPath }) {
+  try {
+    const buffer = await readFile(artifactPath);
+    const form = new FormData();
+    form.append("buildId", buildId);
+    form.append("projectId", projectId);
+    form.append(
+      "artifact",
+      new Blob([buffer], { type: "application/zip" }),
+      "artifact.zip",
+    );
+
+    const payload = { buildId, projectId };
+    const timestamp = Date.now().toString();
+    const signature = crypto
+      .createHmac("sha256", RUNNER_SECRET)
+      .update(`${timestamp}.${JSON.stringify(payload)}`)
+      .digest("hex");
+
+    await fetch(artifactUploadUrl, {
+      method: "POST",
+      headers: {
+        "x-olynero-signature": signature,
+        "x-olynero-timestamp": timestamp,
+      },
+      body: form,
+    });
+  } catch (error) {
+    console.error("Artifact upload failed", error);
   }
 }
