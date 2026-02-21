@@ -1,6 +1,5 @@
 "use client";
 
-import type { Selectable } from "kysely";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
@@ -19,14 +18,14 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import type { DB } from "@/lib/db/schema";
 import type { Role } from "@/lib/role";
+import type { ProjectSummary } from "@/lib/types";
 
 export function AppSidebar({
-  sessions,
+  projects,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  sessions: Selectable<DB["ui_session"]>[];
+  projects: ProjectSummary[];
 }) {
   const pathname = usePathname();
   const user = useUser();
@@ -43,7 +42,7 @@ export function AppSidebar({
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <NavProjects sessions={sessions} />
+        <NavProjects projects={projects} />
         {(["admin"] as Role[]).includes(user.role) && (
           <>
             <SidebarSeparator />
@@ -51,29 +50,8 @@ export function AppSidebar({
               <SidebarGroupLabel>Settings</SidebarGroupLabel>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={pathname === "/settings/github-account"}
-                    asChild
-                  >
-                    <Link href="/settings/github-account">Github Account</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={pathname === "/settings/vercel-account"}
-                    asChild
-                  >
-                    <Link href="/settings/vercel-account">Vercel Account</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={pathname === "/settings/tidbcloud-account"}
-                    asChild
-                  >
-                    <Link href="/settings/tidbcloud-account">
-                      TiDB Cloud Account
-                    </Link>
+                  <SidebarMenuButton isActive={pathname === "/admin"} asChild>
+                    <Link href="/admin">Admin</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

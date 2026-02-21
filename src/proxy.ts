@@ -11,6 +11,7 @@ export default async function proxy(request: NextRequest) {
     path.startsWith("/projects/") ||
     path.startsWith("/settings/") ||
     path.startsWith("/s/") ||
+    path.startsWith("/p/") ||
     path.startsWith("/admin/")
   ) {
     const session = await getSession();
