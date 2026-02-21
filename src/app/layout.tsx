@@ -2,24 +2,24 @@ import Providers from "@/app/providers";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { getSession } from "@/lib/auth";
 import { validateServerEnv } from "@/lib/env";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const olyneroSans = Space_Grotesk({
+  variable: "--font-olynero-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const olyneroMono = JetBrains_Mono({
+  variable: "--font-olynero-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "OlyneroAI",
   description:
-    "Lovable-like app builder: describe a landing or CRUD app and get a generated project, build, preview, and zip artifact.",
+    "Премиальный app builder: опишите landing или CRUD и получите проект, сборку, превью и zip‑артефакт.",
 };
 
 export default async function RootLayout({
@@ -33,7 +33,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${olyneroSans.variable} ${olyneroMono.variable} antialiased`}
       >
         <Providers session={session}>{children}</Providers>
         <Toaster />
