@@ -10,6 +10,7 @@ Apply the initial schema and RLS policies:
 2. Paste and run the SQL from `migrations/supabase/001_olyneroai_init.sql`.
 3. Paste and run the SQL from `migrations/supabase/002_olyneroai_storage.sql` (creates the `artifacts` bucket).
 4. Paste and run the SQL from `migrations/supabase/003_olyneroai_admin_profiles.sql` (admin flags + safer profile updates).
+5. Paste and run the SQL from `migrations/supabase/004_olyneroai_ai_models.sql` (AI providers, models, and settings).
 
 ### Admin Bootstrap
 Promote a user to admin by email (run in SQL Editor):
@@ -30,6 +31,8 @@ Web app (public):
 Web app (server-only):
 - `SUPABASE_SERVICE_ROLE_KEY`: service role key for admin/server-only operations.
 - `RUNNER_SECRET`: shared secret used to sign runner requests and callbacks.
+- `OPENAI_API_KEY`: OpenAI API key (required if OpenAI model is active).
+- `DEEPSEEK_API_KEY`: DeepSeek API key (required if DeepSeek model is active).
 - `APP_ADMIN_EMAIL` (optional): reserved for future bootstrap flows.
 - `APP_ADMIN_PASSWORD` (optional): reserved for future bootstrap flows.
 
@@ -88,7 +91,7 @@ on conflict (key) do update set value = excluded.value;
 ### A) Vercel
 1. Create a new Vercel project from this repo.
 2. Add environment variables:
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RUNNER_SECRET`, `APP_ADMIN_EMAIL` (optional), `APP_ADMIN_PASSWORD` (optional).
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RUNNER_SECRET`, `OPENAI_API_KEY` (if OpenAI), `DEEPSEEK_API_KEY` (if DeepSeek), `APP_ADMIN_EMAIL` (optional), `APP_ADMIN_PASSWORD` (optional).
 3. Build command: `npm run build`
 4. Output: default Next.js output (no custom output directory).
 5. Deploy the runner separately (VPS) and set `settings.runner_url` in Supabase.

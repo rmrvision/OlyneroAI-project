@@ -1,8 +1,8 @@
-# OlyneroAI v0.1 Polish Plan
+# OlyneroAI Lovable-Level Plan
 
-1. Public landing + routing (`/` public, `/app` workspace) green.
-2. Premium theming + typography + background system green.
-3. Локализация UI (RU) + sidebar/navigation cleanup green.
-4. Проекты/чат/сборки: премиальный вид и ясная структура green.
-5. Админка: новый layout + RU контент + навигация green.
-6. Финальная проверка: lint/typecheck/build green.
+1. AI провайдеры/модели: таблицы, env, админ‑настройки.
+2. LLM pipeline: prompt → JSON spec (landing/crud), error handling.
+3. Prompt-first UI: новый экран /app, ruixen-moon-chat компонент + действия.
+4. Премиальный единый стиль: landing/login/admin/app в одном визуальном языке.
+5. Интеграция генерации: quick-generate, переходы, статусы.
+6. Финальные проверки: lint/typecheck/test/build.

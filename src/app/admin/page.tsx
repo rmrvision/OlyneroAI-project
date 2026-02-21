@@ -264,6 +264,57 @@ async function restartBuild(formData: FormData) {
   revalidatePath("/admin");
 }
 
+async function updateAiSettings(formData: FormData) {
+  "use server";
+  const admin = await requireAdmin();
+  if (!admin) throw new Error("Unauthorized");
+
+  const modelId = String(formData.get("modelId") ?? "");
+  if (!modelId) return;
+
+  const supabase = createSupabaseAdminClient();
+  const { data: model } = await supabase
+    .from("ai_models")
+    .select("id,provider_key,model_id,display_name")
+    .eq("id", modelId)
+    .single();
+
+  if (!model) {
+    throw new Error("Model not found");
+  }
+
+  const { data: settings } = await supabase
+    .from("ai_settings")
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+
+  if (settings?.id) {
+    await supabase
+      .from("ai_settings")
+      .update({
+        active_provider_key: model.provider_key,
+        active_model_id: model.id,
+      })
+      .eq("id", settings.id);
+  } else {
+    await supabase.from("ai_settings").insert({
+      active_provider_key: model.provider_key,
+      active_model_id: model.id,
+    });
+  }
+
+  await logAdminAction(
+    "ai.settings.update",
+    "ai_settings",
+    settings?.id ?? null,
+    { modelId: model.id, providerKey: model.provider_key },
+    admin.userId,
+  );
+
+  revalidatePath("/admin");
+}
+
 export default async function AdminPage() {
   const admin = await requireAdmin();
   if (!admin) {
@@ -271,37 +322,67 @@ export default async function AdminPage() {
   }
 
   const supabase = createSupabaseAdminClient();
-  const [usersResult, projectsResult, buildsResult, auditResult, templates] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id,email,display_name,role,is_disabled,created_at,limits")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabase
-        .from("projects")
-        .select("id,name,owner_id,status,created_at")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabase
-        .from("builds")
-        .select(
-          "id,project_id,status,created_at,preview_url,artifact_path,logs",
-        )
-        .order("created_at", { ascending: false })
-        .limit(20),
-      supabase
-        .from("audit_log")
-        .select("id,actor_id,action,entity_type,entity_id,metadata,created_at")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      getTemplateCatalog(),
-    ]);
+  const [
+    usersResult,
+    projectsResult,
+    buildsResult,
+    auditResult,
+    templates,
+    aiProvidersResult,
+    aiModelsResult,
+    aiSettingsResult,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id,email,display_name,role,is_disabled,created_at,limits")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("projects")
+      .select("id,name,owner_id,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("builds")
+      .select("id,project_id,status,created_at,preview_url,artifact_path,logs")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("audit_log")
+      .select("id,actor_id,action,entity_type,entity_id,metadata,created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    getTemplateCatalog(),
+    supabase
+      .from("ai_providers")
+      .select("key,name,base_url,is_enabled,created_at")
+      .order("name", { ascending: true }),
+    supabase
+      .from("ai_models")
+      .select(
+        "id,provider_key,model_id,display_name,is_enabled,context_window,created_at",
+      )
+      .order("display_name", { ascending: true }),
+    supabase
+      .from("ai_settings")
+      .select("id,active_provider_key,active_model_id"),
+  ]);
 
   const users = usersResult.data ?? [];
   const projects = projectsResult.data ?? [];
   const builds = buildsResult.data ?? [];
   const audit = auditResult.data ?? [];
+  const aiProviders = aiProvidersResult.data ?? [];
+  const aiModels = aiModelsResult.data ?? [];
+  const aiSettings = aiSettingsResult.data ?? [];
+
+  const activeSettings = aiSettings[0];
+  const activeModel = aiModels.find(
+    (model) => model.id === activeSettings?.active_model_id,
+  );
+  const activeProvider = aiProviders.find(
+    (provider) => provider.key === activeSettings?.active_provider_key,
+  );
 
   const roleLabels: Record<string, string> = {
     user: "пользователь",
@@ -317,6 +398,10 @@ export default async function AdminPage() {
 
   const supabaseUrl = getPublicSupabaseUrl();
   const runnerUrl = await getRunnerUrl();
+  const providerKeyStatus = {
+    openai: Boolean(process.env.OPENAI_API_KEY),
+    deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
+  };
   const [supabaseHealth, runnerHealth] = await Promise.all([
     checkEndpoint(`${supabaseUrl}/auth/v1/health`),
     checkEndpoint(`${runnerUrl}/health`),
@@ -326,6 +411,7 @@ export default async function AdminPage() {
     { id: "users", label: "Пользователи" },
     { id: "projects", label: "Проекты" },
     { id: "builds", label: "Сборки" },
+    { id: "ai", label: "AI модели" },
     { id: "templates", label: "Шаблоны" },
     { id: "audit", label: "Аудит" },
     { id: "health", label: "Состояние" },
@@ -581,6 +667,96 @@ export default async function AdminPage() {
                   );
                 })
               )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="ai" className="space-y-3">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle>AI модели</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="grid gap-3 md:grid-cols-2">
+                {aiProviders.length === 0 ? (
+                  <p className="text-muted-foreground">
+                    Провайдеры пока не настроены.
+                  </p>
+                ) : (
+                  aiProviders.map((provider) => {
+                    const keyOk =
+                      providerKeyStatus[
+                        provider.key as keyof typeof providerKeyStatus
+                      ] ?? false;
+                    return (
+                      <div
+                        key={provider.key}
+                        className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card/60 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-medium text-foreground">
+                            {provider.name}
+                          </div>
+                          <Badge variant={keyOk ? "secondary" : "destructive"}>
+                            {keyOk ? "ключ подключен" : "нет ключа"}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {provider.base_url ?? "base url не задан"}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+                <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Активная конфигурация
+                </div>
+                <div className="mt-1 text-sm text-foreground">
+                  {activeProvider?.name ?? "Не выбрано"}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {activeModel?.display_name ?? "Выберите модель ниже"}
+                </div>
+              </div>
+
+              <form action={updateAiSettings} className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium" htmlFor="modelId">
+                    Активная модель
+                  </label>
+                  <select
+                    id="modelId"
+                    name="modelId"
+                    defaultValue={activeModel?.id ?? ""}
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="" disabled>
+                      Выберите модель
+                    </option>
+                    {aiModels.map((model) => {
+                      const providerLabel =
+                        aiProviders.find(
+                          (provider) => provider.key === model.provider_key,
+                        )?.name ?? model.provider_key;
+                      const statusLabel = model.is_enabled
+                        ? ""
+                        : " (выключено)";
+                      return (
+                        <option key={model.id} value={model.id}>
+                          {providerLabel} — {model.display_name}
+                          {statusLabel}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <Button type="submit" size="sm" variant="secondary">
+                  Сохранить модель
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </section>
