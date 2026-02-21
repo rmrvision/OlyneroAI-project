@@ -71,42 +71,42 @@ export default function RuixenMoonChat({
     {
       label: "Сгенерировать код",
       value: "Собери лендинг для AI‑стартапа с формой заявки и блоком FAQ.",
-      icon: <Code2 className=\"h-4 w-4\" />,
+      icon: <Code2 className="h-4 w-4" />,
     },
     {
       label: "Запуск приложения",
       value: "Сделай CRUD для клиентов: name, phone, email.",
-      icon: <Rocket className=\"h-4 w-4\" />,
+      icon: <Rocket className="h-4 w-4" />,
     },
     {
       label: "UI‑компоненты",
       value: "Сгенерируй лендинг для дизайн‑студии с блоком кейсов.",
-      icon: <Layers className=\"h-4 w-4\" />,
+      icon: <Layers className="h-4 w-4" />,
     },
     {
       label: "Идеи для темы",
       value: "Лендинг для SaaS‑продукта с акцентом на безопасность и скорость.",
-      icon: <Palette className=\"h-4 w-4\" />,
+      icon: <Palette className="h-4 w-4" />,
     },
     {
       label: "Личный кабинет",
       value: "CRUD для сотрудников: name, role, email, phone.",
-      icon: <CircleUserRound className=\"h-4 w-4\" />,
+      icon: <CircleUserRound className="h-4 w-4" />,
     },
     {
       label: "Лендинг",
       value: "Лендинг для продукта аналитики продаж с CTA на демо.",
-      icon: <MonitorIcon className=\"h-4 w-4\" />,
+      icon: <MonitorIcon className="h-4 w-4" />,
     },
     {
       label: "Загрузить документы",
       value: "Лендинг для сервиса документооборота с блоком интеграций.",
-      icon: <FileUp className=\"h-4 w-4\" />,
+      icon: <FileUp className="h-4 w-4" />,
     },
     {
       label: "Изображения",
       value: "Лендинг для фотостока с витриной и подпиской.",
-      icon: <ImageIcon className=\"h-4 w-4\" />,
+      icon: <ImageIcon className="h-4 w-4" />,
     },
   ];
 
