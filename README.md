@@ -142,3 +142,4 @@ Visit `http://localhost:3000/login`, authenticate with the user you just created
 | `npm run format` | Apply Biome formatting in-place. |
 | `npm run migrate:init|up|down` | Execute the TiDB schema bootstrap/migration workflow in `scripts/migrate.ts` and regenerate `src/lib/db/schema.d.ts`. |
 | `npm run install-shadcn-components` | Re-sync shadcn/ui components based on `components.json`. |
+# OlyneroAI-project
