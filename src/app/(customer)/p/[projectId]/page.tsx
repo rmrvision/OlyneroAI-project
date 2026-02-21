@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { ProjectSpec } from "@/lib/spec";
 
 export default async function ProjectChatPage({
   params,
@@ -27,6 +33,23 @@ export default async function ProjectChatPage({
     .order("created_at", { ascending: false })
     .limit(5);
 
+  let latestSpec: ProjectSpec | null = null;
+  if (builds && builds.length > 0) {
+    const { data: buildDetail } = await supabase
+      .from("builds")
+      .select("logs")
+      .eq("id", builds[0].id)
+      .single();
+    if (buildDetail?.logs) {
+      try {
+        const parsed = JSON.parse(buildDetail.logs as string);
+        latestSpec = parsed?.spec ?? null;
+      } catch {
+        latestSpec = null;
+      }
+    }
+  }
+
   return (
     <div className="grid h-full grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card className="flex h-full flex-col overflow-hidden">
@@ -38,7 +61,7 @@ export default async function ProjectChatPage({
             </span>
           </CardTitle>
         </CardHeader>
-        <ProjectChat projectName={project.name} />
+        <ProjectChat projectId={project.id} projectName={project.name} />
       </Card>
       <div className="flex h-full flex-col gap-4">
         <Card>
@@ -46,7 +69,13 @@ export default async function ProjectChatPage({
             <CardTitle className="text-base">Spec</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Generate a spec from chat to see structured requirements here.
+            {latestSpec ? (
+              <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-xs text-foreground">
+                {JSON.stringify(latestSpec, null, 2)}
+              </pre>
+            ) : (
+              <p>Generate a spec from chat to see structured requirements here.</p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -79,7 +108,18 @@ export default async function ProjectChatPage({
             <CardTitle className="text-base">Preview links</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Preview URLs will appear after the first successful build.
+            {builds && builds[0]?.preview_url ? (
+              <a
+                className="underline"
+                href={builds[0].preview_url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open preview
+              </a>
+            ) : (
+              <p>Preview URLs will appear after the first successful build.</p>
+            )}
           </CardContent>
         </Card>
       </div>

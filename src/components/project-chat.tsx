@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,10 +24,13 @@ const statusStyles: Record<MessageStatus, string> = {
 };
 
 export function ProjectChat({
+  projectId,
   projectName,
 }: {
+  projectId: string;
   projectName: string;
 }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -65,21 +69,50 @@ export function ProjectChat({
             : message,
         ),
       );
-    }, 450);
+    }, 200);
 
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((message) =>
-          message.id === runningId
-            ? {
-                ...message,
-                status: "success",
-                content: "Spec ready. Template generation will start next.",
-              }
-            : message,
-        ),
-      );
-    }, 1400);
+    fetch(`/api/v1/projects/${projectId}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: userMessage.content }),
+    })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload?.message || "Generation failed");
+        }
+        return payload;
+      })
+      .then((payload) => {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === runningId
+              ? {
+                  ...message,
+                  status: payload.status === "success" ? "success" : "error",
+                  content:
+                    payload.status === "success"
+                      ? "Spec ready. Build completed."
+                      : "Build failed. Check logs in build history.",
+                }
+              : message,
+          ),
+        );
+        router.refresh();
+      })
+      .catch((error) => {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === runningId
+              ? {
+                  ...message,
+                  status: "error",
+                  content: error instanceof Error ? error.message : String(error),
+                }
+              : message,
+          ),
+        );
+      });
   };
 
   const messageItems = useMemo(
