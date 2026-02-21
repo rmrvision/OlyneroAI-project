@@ -22,6 +22,8 @@ import {
 } from "@/lib/user-settings/github";
 import { isVercelSettingsValid } from "@/lib/user-settings/vercel";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProjectPage({
   params,
 }: {

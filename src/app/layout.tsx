@@ -4,6 +4,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getSession } from "@/lib/auth";
+import { validateServerEnv } from "@/lib/env";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  validateServerEnv();
   const session = await getSession();
 
   return (

@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { getSessionUser } from "@/lib/auth";
-import db from "@/lib/db/db";
-import { getAll } from "@/lib/kysely-utils";
+import type { DB } from "@/lib/db/schema";
+import type { Selectable } from "kysely";
 
 export default async function MainLayout({
   children,
@@ -12,10 +12,7 @@ export default async function MainLayout({
 }) {
   const user = await getSessionUser();
   if (!user) return null;
-  const sessions = await getAll(db, "ui_session", { user_id: user.id }, [
-    "created_at",
-    "desc",
-  ]);
+  const sessions: Selectable<DB["ui_session"]>[] = [];
 
   return (
     <>

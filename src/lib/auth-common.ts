@@ -1,25 +1,37 @@
-import type { InferUser } from "better-auth";
-import type { auth } from "@/lib/auth";
-import { formatRole, parseRole, type Role } from "@/lib/role";
+import type { User } from "@supabase/supabase-js";
+import { parseRole, type Role } from "@/lib/role";
 
-export interface SessionUser
-  extends Omit<InferUser<typeof auth>, "id" | "role"> {
-  id: number;
+export interface SessionUser {
+  id: string;
+  email: string;
+  name: string;
+  image: string | null;
   role: Role;
 }
 
-export function toSessionUser(user: InferUser<typeof auth>): SessionUser {
+export function toSessionUser(user: User, role?: Role): SessionUser {
+  const metadata = user.user_metadata ?? {};
+  const name =
+    typeof metadata.name === "string" && metadata.name.trim() !== ""
+      ? metadata.name
+      : user.email ?? "User";
+
   return {
-    ...user,
-    id: parseInt(user.id, 10),
-    role: parseRole(user.role),
+    id: user.id,
+    email: user.email ?? "",
+    name,
+    image:
+      typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
+    role: role ?? parseRole(String(metadata.role ?? "user")),
   };
 }
 
-export function fromSessionUser(user: SessionUser): InferUser<typeof auth> {
-  return {
-    ...user,
-    id: user.id.toString(10),
-    role: formatRole(user.role),
-  };
+export function requireLegacyNumericUserId(user: SessionUser) {
+  const parsed = Number.parseInt(user.id, 10);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(
+      "Legacy numeric user ID required for the old database layer. Supabase UUIDs are not supported here.",
+    );
+  }
+  return parsed;
 }

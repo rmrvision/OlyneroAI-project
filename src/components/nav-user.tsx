@@ -89,7 +89,7 @@ export function NavUser({ user }: { user: SessionUser }) {
                 type="button"
                 className="flex w-full items-center gap-2"
                 onClick={() => {
-                  fetch("/api/auth/sign-out").finally(() => {
+                  fetch("/api/auth/sign-out", { method: "POST" }).finally(() => {
                     window.location.href = "/login";
                   });
                 }}

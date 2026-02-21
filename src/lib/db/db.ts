@@ -1,16 +1,15 @@
-import { Kysely, MysqlDialect } from "kysely";
-import { createPool } from "mysql2";
+import type { Kysely } from "kysely";
 import type { DB } from "@/lib/db/schema";
 
-const db = new Kysely<DB>({
-  dialect: new MysqlDialect({
-    pool: createPool({
-      uri: process.env.DATABASE_URL!,
-      ssl: {
-        rejectUnauthorized: true,
-      },
-    }),
-  }),
-});
+const db = new Proxy(
+  {},
+  {
+    get() {
+      throw new Error(
+        "Database layer disabled. OlyneroAI uses Supabase; replace Kysely calls with Supabase clients.",
+      );
+    },
+  },
+) as Kysely<DB>;
 
 export default db;

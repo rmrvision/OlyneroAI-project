@@ -10,6 +10,8 @@ import db from "@/lib/db/db";
 import { getAll } from "@/lib/kysely-utils";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function Projects() {
   const projects = await getAll(db, "project", {});
   return (

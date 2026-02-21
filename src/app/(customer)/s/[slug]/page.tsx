@@ -39,6 +39,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+export const dynamic = "force-dynamic";
+
 const cachedGetSessionData = cache(getSessionData);
 
 export default async function SessionPage({

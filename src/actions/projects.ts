@@ -6,6 +6,7 @@ import { unauthorized } from "next/navigation";
 import { Octokit } from "octokit";
 import { raceYieldFromAsyncIterators } from "@/lib/async-generators";
 import { getSessionUser } from "@/lib/auth";
+import { requireLegacyNumericUserId } from "@/lib/auth-common";
 import db from "@/lib/db/db";
 import type { DB } from "@/lib/db/schema";
 import { getErrorMessage } from "@/lib/errors";
@@ -89,6 +90,8 @@ export async function* createProjectStreamed({
     unauthorized();
   }
 
+  const legacyUserId = requireLegacyNumericUserId(user);
+
   if (!isGitHubSettingsValid(settings)) {
     throw new Error("GitHub settings are invalid.");
   }
@@ -144,7 +147,7 @@ export async function* createProjectStreamed({
   yield { type: "creating-db-project" };
 
   const project = await insert(db, "project", {
-    user_id: user.id,
+    user_id: legacyUserId,
     name,
     description,
     github_repo: github_repository_name,

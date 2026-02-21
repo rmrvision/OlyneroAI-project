@@ -8,6 +8,7 @@ import { createTaskRevision } from "@/actions/task-revisions";
 import { createTask } from "@/actions/tasks";
 import { raceYieldFromAsyncIterators } from "@/lib/async-generators";
 import { getSessionUser } from "@/lib/auth";
+import { requireLegacyNumericUserId } from "@/lib/auth-common";
 import db from "@/lib/db/db";
 import { getErrorMessage } from "@/lib/errors";
 import { get, insert, update } from "@/lib/kysely-utils";
@@ -75,6 +76,7 @@ export async function* createUISession({
       throw new Error("Default Vercel project team id is not set.");
     }
 
+    const legacyUserId = requireLegacyNumericUserId(user);
     const step1 = await generateUISessionStep1({ userPrompt });
     const slug = `${step1.slug}-${suffix}`;
 
@@ -82,7 +84,7 @@ export async function* createUISession({
       slug,
       title: step1.title,
       logs: "[]",
-      user_id: user.id,
+      user_id: legacyUserId,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -225,7 +227,7 @@ export async function* createUISession({
           project_id: projectId,
           parent_task_id: null,
           parent_task_revision_ordinal: null,
-          user_id: user.id,
+          user_id: legacyUserId,
         }).then(async (task) => {
           await update(
             db,

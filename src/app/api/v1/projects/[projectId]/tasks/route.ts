@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createTaskRevision } from "@/actions/task-revisions";
 import { createTask } from "@/actions/tasks";
 import { getSessionUser } from "@/lib/auth";
+import { requireLegacyNumericUserId } from "@/lib/auth-common";
 import db from "@/lib/db/db";
 import { get } from "@/lib/kysely-utils";
 import { getSiteSettings } from "@/lib/system-settings";
@@ -31,6 +32,8 @@ export async function POST(
     unauthorized();
   }
 
+  const legacyUserId = requireLegacyNumericUserId(user);
+
   if (!settings) {
     return NextResponse.json(
       {
@@ -55,7 +58,7 @@ export async function POST(
 
   const project = await get(db, "project", {
     id: projectId,
-    user_id: user.id,
+    user_id: legacyUserId,
   });
 
   const octokit = getGitHubClient(settings.github_token);
