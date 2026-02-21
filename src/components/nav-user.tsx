@@ -33,7 +33,7 @@ export function NavUser({ user }: { user: SessionUser }) {
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.image ?? ""} alt={user.name} />
                 <AvatarFallback className="rounded-lg">
-                  {user.name[0]}
+                  {user.name?.[0] ?? "O"}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -53,11 +53,13 @@ export function NavUser({ user }: { user: SessionUser }) {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.image ?? ""} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {user.name?.[0] ?? "O"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs"> {user.name[0]}</span>
+                  <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -97,7 +99,7 @@ export function NavUser({ user }: { user: SessionUser }) {
                 }}
               >
                 <LogOut />
-                Log out
+                Выйти
               </button>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -35,8 +35,11 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="items-start">
-        <Link href="/" aria-label="Home">
+        <Link href="/app" aria-label="Workspace" className="space-y-1">
           <div className="text-lg font-semibold tracking-tight">OlyneroAI</div>
+          <div className="text-xs text-muted-foreground">
+            Конструктор приложений
+          </div>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -45,11 +48,11 @@ export function AppSidebar({
           <>
             <SidebarSeparator />
             <SidebarGroup>
-              <SidebarGroupLabel>Settings</SidebarGroupLabel>
+              <SidebarGroupLabel>Система</SidebarGroupLabel>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton isActive={pathname === "/admin"} asChild>
-                    <Link href="/admin">Admin</Link>
+                    <Link href="/admin">Админка</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

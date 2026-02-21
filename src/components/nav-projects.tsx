@@ -32,27 +32,35 @@ export function NavProjects({ projects }: { projects: ProjectSummary[] }) {
 
   const showToggle = projects.length > 7;
 
+  const statusLabels: Record<string, string> = {
+    draft: "черновик",
+    queued: "в очереди",
+    running: "в работе",
+    success: "готово",
+    error: "ошибка",
+  };
+
   return (
     <>
       <SidebarGroup className="pb-0">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="font-medium">
-              <Link href="/">
+              <Link href="/app">
                 <Plus className="h-4 w-4" />
-                <span>New Project</span>
+                <span>Создать проект</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
       <SidebarGroup>
-        <SidebarGroupLabel>Projects</SidebarGroupLabel>
+        <SidebarGroupLabel>Проекты</SidebarGroupLabel>
         <SidebarMenu>
           {visibleProjects.length === 0 ? (
             <SidebarMenuItem>
               <SidebarMenuButton className="text-muted-foreground">
-                No projects yet
+                Проектов пока нет
               </SidebarMenuButton>
             </SidebarMenuItem>
           ) : null}
@@ -69,7 +77,7 @@ export function NavProjects({ projects }: { projects: ProjectSummary[] }) {
                     variant="secondary"
                     className="ml-auto text-[10px] uppercase tracking-wide"
                   >
-                    {project.status}
+                    {statusLabels[project.status] ?? project.status}
                   </Badge>
                 </Link>
               </SidebarMenuButton>
@@ -81,20 +89,10 @@ export function NavProjects({ projects }: { projects: ProjectSummary[] }) {
                 onClick={() => setShowAll((prev) => !prev)}
                 className="text-muted-foreground"
               >
-                <span>{showAll ? "Show less" : "Show all"}</span>
+                <span>{showAll ? "Скрыть" : "Показать все"}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ) : null}
-        </SidebarMenu>
-      </SidebarGroup>
-      <SidebarGroup>
-        <SidebarGroupLabel>Sessions</SidebarGroupLabel>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton className="text-muted-foreground">
-              Sessions will appear after generation
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
     </>
