@@ -13,7 +13,6 @@ import {
   Layers,
   MonitorIcon,
   Palette,
-  Paperclip,
   Rocket,
 } from "lucide-react";
 
@@ -68,6 +67,48 @@ export default function RuixenMoonChat({
     minHeight: 64,
     maxHeight: 260,
   });
+  const quickActions = [
+    {
+      label: "Сгенерировать код",
+      value: "Собери лендинг для AI‑стартапа с формой заявки и блоком FAQ.",
+      icon: <Code2 className=\"h-4 w-4\" />,
+    },
+    {
+      label: "Запуск приложения",
+      value: "Сделай CRUD для клиентов: name, phone, email.",
+      icon: <Rocket className=\"h-4 w-4\" />,
+    },
+    {
+      label: "UI‑компоненты",
+      value: "Сгенерируй лендинг для дизайн‑студии с блоком кейсов.",
+      icon: <Layers className=\"h-4 w-4\" />,
+    },
+    {
+      label: "Идеи для темы",
+      value: "Лендинг для SaaS‑продукта с акцентом на безопасность и скорость.",
+      icon: <Palette className=\"h-4 w-4\" />,
+    },
+    {
+      label: "Личный кабинет",
+      value: "CRUD для сотрудников: name, role, email, phone.",
+      icon: <CircleUserRound className=\"h-4 w-4\" />,
+    },
+    {
+      label: "Лендинг",
+      value: "Лендинг для продукта аналитики продаж с CTA на демо.",
+      icon: <MonitorIcon className=\"h-4 w-4\" />,
+    },
+    {
+      label: "Загрузить документы",
+      value: "Лендинг для сервиса документооборота с блоком интеграций.",
+      icon: <FileUp className=\"h-4 w-4\" />,
+    },
+    {
+      label: "Изображения",
+      value: "Лендинг для фотостока с витриной и подпиской.",
+      icon: <ImageIcon className=\"h-4 w-4\" />,
+    },
+  ];
 
   useEffect(() => {
     setMessage(initialMessage);
@@ -109,16 +150,22 @@ export default function RuixenMoonChat({
 
         <div className="w-full max-w-3xl pb-[10vh]">
           <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-2xl">
-            <Textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(event) => {
-                setMessage(event.target.value);
-                adjustHeight();
-              }}
-              placeholder="Опишите запрос для OlyneroAI..."
-              className={cn(
-                "w-full resize-none border-none bg-transparent px-5 py-4 text-sm text-white",
+              <Textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(event) => {
+                  setMessage(event.target.value);
+                  adjustHeight();
+                }}
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                    event.preventDefault();
+                    void handleSend();
+                  }
+                }}
+                placeholder="Опишите запрос для OlyneroAI..."
+                className={cn(
+                  "w-full resize-none border-none bg-transparent px-5 py-4 text-sm text-white",
                 "focus-visible:ring-0 focus-visible:ring-offset-0",
                 "placeholder:text-white/40 min-h-[64px]",
               )}
@@ -128,10 +175,14 @@ export default function RuixenMoonChat({
             <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
               <Button
                 variant="ghost"
-                size="icon"
-                className="text-white/70 hover:bg-white/10 hover:text-white"
+                size="sm"
+                onClick={() => {
+                  setMessage("");
+                  adjustHeight(true);
+                }}
+                className="text-xs text-white/70 hover:bg-white/10 hover:text-white"
               >
-                <Paperclip className="h-4 w-4" />
+                Сбросить
               </Button>
 
               <div className="flex items-center gap-2">
@@ -153,17 +204,17 @@ export default function RuixenMoonChat({
           </div>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <QuickAction icon={<Code2 className="h-4 w-4" />} label="Сгенерировать код" />
-            <QuickAction icon={<Rocket className="h-4 w-4" />} label="Запуск приложения" />
-            <QuickAction icon={<Layers className="h-4 w-4" />} label="UI‑компоненты" />
-            <QuickAction icon={<Palette className="h-4 w-4" />} label="Идеи для темы" />
-            <QuickAction
-              icon={<CircleUserRound className="h-4 w-4" />}
-              label="Личный кабинет"
-            />
-            <QuickAction icon={<MonitorIcon className="h-4 w-4" />} label="Лендинг" />
-            <QuickAction icon={<FileUp className="h-4 w-4" />} label="Загрузить документы" />
-            <QuickAction icon={<ImageIcon className="h-4 w-4" />} label="Изображения" />
+            {quickActions.map((action) => (
+              <QuickAction
+                key={action.label}
+                icon={action.icon}
+                label={action.label}
+                onClick={() => {
+                  setMessage(action.value);
+                  adjustHeight();
+                }}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -174,12 +225,14 @@ export default function RuixenMoonChat({
 interface QuickActionProps {
   icon: React.ReactNode;
   label: string;
+  onClick?: () => void;
 }
 
-function QuickAction({ icon, label }: QuickActionProps) {
+function QuickAction({ icon, label, onClick }: QuickActionProps) {
   return (
     <Button
       variant="outline"
+      onClick={onClick}
       className="flex items-center gap-2 rounded-full border-white/10 bg-black/40 text-xs text-white/70 hover:bg-white/10 hover:text-white"
     >
       {icon}
