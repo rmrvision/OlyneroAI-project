@@ -9,6 +9,7 @@ Apply the initial schema and RLS policies:
 1. Open Supabase Studio → **SQL Editor**.
 2. Paste and run the SQL from `migrations/supabase/001_olyneroai_init.sql`.
 3. Paste and run the SQL from `migrations/supabase/002_olyneroai_storage.sql` (creates the `artifacts` bucket).
+4. Paste and run the SQL from `migrations/supabase/003_olyneroai_admin_profiles.sql` (admin flags + safer profile updates).
 
 ### Admin Bootstrap
 Promote a user to admin by email (run in SQL Editor):

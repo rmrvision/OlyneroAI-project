@@ -21,6 +21,16 @@ export async function getSessionUser() {
     return null;
   }
 
-  const rawRole = data.user.user_metadata?.role;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role,is_disabled")
+    .eq("id", data.user.id)
+    .single();
+
+  if (profile?.is_disabled) {
+    return null;
+  }
+
+  const rawRole = profile?.role ?? data.user.user_metadata?.role;
   return toSessionUser(data.user, parseRole(String(rawRole ?? "user")));
 }
