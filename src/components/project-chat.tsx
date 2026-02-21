@@ -89,11 +89,18 @@ export function ProjectChat({
             message.id === runningId
               ? {
                   ...message,
-                  status: payload.status === "success" ? "success" : "error",
+                  status:
+                    payload.status === "running"
+                      ? "running"
+                      : payload.status === "success"
+                        ? "success"
+                        : "error",
                   content:
-                    payload.status === "success"
-                      ? "Spec ready. Build completed."
-                      : "Build failed. Check logs in build history.",
+                    payload.status === "running"
+                      ? "Build started. Logs streaming in the right panel."
+                      : payload.status === "success"
+                        ? "Spec ready. Build completed."
+                        : "Build failed. Check logs in build history.",
                 }
               : message,
           ),

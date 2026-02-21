@@ -1,0 +1,12 @@
+{
+  "name": "olynero-runner",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "archiver": "^6.0.2",
+    "express": "^4.21.2"
+  }
+}

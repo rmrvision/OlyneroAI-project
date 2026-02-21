@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { BuildHistory } from "@/components/build-history";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ProjectSpec } from "@/lib/spec";
 
@@ -28,21 +24,16 @@ export default async function ProjectChatPage({
 
   const { data: builds } = await supabase
     .from("builds")
-    .select("id,status,created_at,preview_url,artifact_path")
+    .select("id,status,created_at,preview_url,artifact_path,logs")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false })
     .limit(5);
 
   let latestSpec: ProjectSpec | null = null;
   if (builds && builds.length > 0) {
-    const { data: buildDetail } = await supabase
-      .from("builds")
-      .select("logs")
-      .eq("id", builds[0].id)
-      .single();
-    if (buildDetail?.logs) {
+    if (builds[0].logs) {
       try {
-        const parsed = JSON.parse(buildDetail.logs as string);
+        const parsed = JSON.parse(builds[0].logs as string);
         latestSpec = parsed?.spec ?? null;
       } catch {
         latestSpec = null;
@@ -78,31 +69,7 @@ export default async function ProjectChatPage({
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Build history</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {builds && builds.length > 0 ? (
-              builds.map((build) => (
-                <div
-                  key={build.id}
-                  className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2"
-                >
-                  <div>
-                    <p className="text-foreground">{build.status}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(build.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Build</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">No builds yet.</p>
-            )}
-          </CardContent>
-        </Card>
+        <BuildHistory projectId={project.id} />
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Preview links</CardTitle>

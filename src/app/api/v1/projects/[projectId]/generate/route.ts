@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/auth";
-import { runLocalBuild, generateProjectFromSpec } from "@/lib/generator";
+import { getAppOrigin, getRunnerUrl, signRunnerPayload } from "@/lib/runner";
 import { parsePromptToSpec } from "@/lib/spec";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -37,7 +37,7 @@ export async function POST(
     .from("builds")
     .insert({
       project_id: project.id,
-      status: "planned",
+      status: "queued",
       logs: JSON.stringify({ spec, logs: [] }),
     })
     .select("id,status,created_at")
@@ -47,39 +47,42 @@ export async function POST(
     return NextResponse.json({ message: "Failed to create build" }, { status: 500 });
   }
 
-  await supabase
-    .from("builds")
-    .update({ status: "running" })
-    .eq("id", build.id);
+  const runnerUrl = await getRunnerUrl();
+  const callbackUrl = `${await getAppOrigin()}/api/v1/runner/callback`;
+  const payload = {
+    buildId: build.id,
+    projectId: project.id,
+    projectName: project.name,
+    spec,
+    callbackUrl,
+  };
 
-  let status: "success" | "error" = "success";
-  let logs: string[] = [];
+  const { signature, timestamp, body } = signRunnerPayload(payload);
 
-  try {
-    const workspaceDir = await generateProjectFromSpec(spec, {
-      projectId: project.id,
-      buildId: build.id,
-    });
+  const runnerResponse = await fetch(`${runnerUrl}/runs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-olynero-signature": signature,
+      "x-olynero-timestamp": timestamp,
+    },
+    body,
+  });
 
-    const buildResult = await runLocalBuild(workspaceDir);
-    logs = buildResult.logs;
-    status = buildResult.ok ? "success" : "error";
-  } catch (error) {
-    status = "error";
-    logs = [error instanceof Error ? error.message : String(error)];
+  if (!runnerResponse.ok) {
+    const errorText = await runnerResponse.text();
+    await supabase
+      .from("builds")
+      .update({ status: "error" })
+      .eq("id", build.id);
+    return NextResponse.json({ message: errorText }, { status: 500 });
   }
 
-  await supabase
-    .from("builds")
-    .update({
-      status,
-      logs: JSON.stringify({ spec, logs }),
-    })
-    .eq("id", build.id);
+  await supabase.from("builds").update({ status: "running" }).eq("id", build.id);
 
   return NextResponse.json({
     buildId: build.id,
-    status,
+    status: "running",
     spec,
   });
 }
